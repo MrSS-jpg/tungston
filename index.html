@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TUNGSTON — heavy-duty AI tooling</title>
+<meta name="description" content="Tungston is a small foundry of blunt, useful AI tools. Check uptime, bring your own key, test prompts, build prompts.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="grain"></div>
+
+<header class="topbar">
+  <div class="elemtag">
+    <span class="elemtag__sym">W</span>
+    <span class="elemtag__num">74</span>
+    <span class="elemtag__name">TUNGSTON</span>
+  </div>
+  <div class="status" id="status">
+    <span class="status__dot"></span>
+    <span class="status__text">SYSTEMS ONLINE — <span id="clock">00:00:00</span></span>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <h1 class="wordmark">
+      TUNGSTON
+      <span class="wordmark__glow" aria-hidden="true">TUNGSTON</span>
+    </h1>
+    <p class="tagline">heavy-duty ai tooling. no fluff, no filler, drawn out straight and hard like wire.</p>
+    <p class="subtagline">four tools. one foundry. pick one below.</p>
+  </section>
+
+  <section class="grid" aria-label="Tungston tools">
+
+    <a class="card card--a" href="https://tungston-is-it-down-checker.vercel.app/" target="_blank" rel="noopener">
+      <div class="card__top">
+        <span class="card__code">IDC-01</span>
+        <span class="card__arrow">↗</span>
+      </div>
+      <h2 class="card__title">IS IT<br>DOWN?</h2>
+      <p class="card__desc">Check whether a site or service is actually down — or if it's just you.</p>
+      <div class="card__bar"></div>
+    </a>
+
+    <a class="card card--b" href="https://tungston-byok.vercel.app/" target="_blank" rel="noopener">
+      <div class="card__top">
+        <span class="card__code">BYOK-02</span>
+        <span class="card__arrow">↗</span>
+      </div>
+      <h2 class="card__title">BYOK</h2>
+      <p class="card__desc">Bring your own API key and run it straight through — no middleman, no markup.</p>
+      <div class="card__bar"></div>
+    </a>
+
+    <a class="card card--c" href="https://tungston-tester.vercel.app/" target="_blank" rel="noopener">
+      <div class="card__top">
+        <span class="card__code">TST-03</span>
+        <span class="card__arrow">↗</span>
+      </div>
+      <h2 class="card__title">TESTER</h2>
+      <p class="card__desc">Run prompts and outputs side by side and see what actually holds up.</p>
+      <div class="card__bar"></div>
+    </a>
+
+    <a class="card card--d" href="https://tungston-prompt-maker.onrender.com" target="_blank" rel="noopener">
+      <div class="card__top">
+        <span class="card__code">PM-04</span>
+        <span class="card__arrow">↗</span>
+      </div>
+      <h2 class="card__title">PROMPT<br>MAKER</h2>
+      <p class="card__desc">Turn a rough idea into a sharp, structured prompt worth running.</p>
+      <div class="card__bar"></div>
+    </a>
+
+  </section>
+
+  <section class="specsheet" aria-label="Material specification">
+    <div class="specsheet__row">
+      <span>MATERIAL</span><span>PURE, UNPOLISHED AI TOOLING</span>
+    </div>
+    <div class="specsheet__row">
+      <span>DENSITY</span><span>4 TOOLS / 1 DOMAIN</span>
+    </div>
+    <div class="specsheet__row">
+      <span>MELTING POINT</span><span>DOES NOT MELT UNDER LOAD</span>
+    </div>
+    <div class="specsheet__row">
+      <span>USE CASE</span><span>WHATEVER YOU'RE BUILDING NEXT</span>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <span>TUNGSTON — built raw, shipped straight.</span>
+  <span class="footer__year" id="year"></span>
+</footer>
+
+<script src="script.js"></script>
+</body>
+</html>
