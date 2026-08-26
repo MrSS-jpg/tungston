@@ -1,7 +1,8 @@
 # Tungston
 
-Main landing page / dashboard for the Tungston tools:
+Main landing page / dashboard for Tungston:
 
+- **Tungston AI** — the flagship chatbot (featured front and center)
 - Is It Down? Checker
 - BYOK
 - Tester

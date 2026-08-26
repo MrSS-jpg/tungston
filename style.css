@@ -127,6 +127,116 @@ a { color: inherit; text-decoration: none; }
   letter-spacing: 0.06em;
 }
 
+/* ---------- featured (Tungston AI) ---------- */
+
+.featured {
+  border-bottom: var(--border-w) solid var(--ink);
+  padding: 36px 24px 44px;
+  background: var(--ink);
+}
+
+.feat {
+  display: block;
+  position: relative;
+  border: var(--border-w) solid var(--filament);
+  padding: 36px 32px;
+  overflow: hidden;
+  color: var(--concrete);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.feat:hover,
+.feat:focus-visible {
+  transform: translate(-4px, -4px);
+  box-shadow: 8px 8px 0 var(--filament);
+}
+
+.feat__glow {
+  position: absolute;
+  inset: -40%;
+  background: radial-gradient(circle at 20% 20%, rgba(255,184,0,0.25), transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+.feat > * { position: relative; z-index: 1; }
+
+.feat__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem;
+  letter-spacing: 0.08em;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.feat__code {
+  font-weight: 700;
+  color: var(--filament);
+}
+
+.feat__live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+}
+
+.feat__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--filament);
+  box-shadow: 0 0 8px var(--filament);
+  animation: pulse 1.6s infinite;
+}
+
+.feat__title {
+  font-family: 'Archivo Black', sans-serif;
+  font-size: clamp(2.4rem, 8vw, 5.5rem);
+  line-height: 0.95;
+  margin: 20px 0 14px;
+  color: var(--concrete);
+}
+
+.feat__desc {
+  font-size: 0.95rem;
+  max-width: 52ch;
+  color: var(--concrete);
+  opacity: 0.85;
+  margin: 0 0 26px;
+}
+
+.feat__cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  background: var(--filament);
+  color: var(--ink);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 12px 22px;
+  font-size: 0.9rem;
+}
+
+.feat__arrow {
+  transition: transform 0.15s ease;
+}
+
+.feat:hover .feat__arrow {
+  transform: translate(3px, -3px);
+}
+
+.grid__label {
+  margin: 0;
+  padding: 20px 24px 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  color: var(--tungsten-gray);
+  font-weight: 700;
+}
+
 /* ---------- grid ---------- */
 
 .grid {
@@ -271,6 +381,8 @@ a { color: inherit; text-decoration: none; }
   .card { border-right: none !important; }
   .hero { padding: 44px 18px 32px; }
   .topbar { padding: 14px 18px; }
+  .featured { padding: 24px 16px 32px; }
+  .feat { padding: 26px 20px; }
 }
 
 /* ---------- motion & focus ---------- */
