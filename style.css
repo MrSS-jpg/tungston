@@ -70,7 +70,7 @@ a { color: inherit; text-decoration: none; }
   height: 10px;
   background: var(--filament);
   border: 2px solid var(--ink);
-  border-radius: 50%;
+  border-radius: 0;
   box-shadow: 0 0 8px var(--filament);
   animation: pulse 1.6s infinite;
 }
@@ -186,7 +186,7 @@ a { color: inherit; text-decoration: none; }
 .feat__dot {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
+  border-radius: 0;
   background: var(--filament);
   box-shadow: 0 0 8px var(--filament);
   animation: pulse 1.6s infinite;
