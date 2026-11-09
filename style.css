@@ -245,6 +245,21 @@ a { color: inherit; text-decoration: none; }
   grid-auto-rows: minmax(220px, auto);
 }
 
+.grid--single {
+  grid-template-columns: 1fr;
+}
+
+.grid--single .card {
+  border-right: none;
+  padding: 36px 32px;
+}
+
+.grid--single .card__desc {
+  max-width: 62ch;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
 .card {
   border-right: var(--border-w) solid var(--ink);
   border-bottom: var(--border-w) solid var(--ink);
