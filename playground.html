@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tungsten Playground — Live HTML App Builder</title>
+  <meta name="description" content="Autonomous HTML app generator powered by GPT-120B and our 4-key Groq LPU cluster. Code, test, and export single-file web apps in real time.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    :root {
+      --concrete: #EEEEE6;
+      --surface: #E4E4DC;
+      --surface2: #D8D8CF;
+      --ink: #111111;
+      --filament: #FFB800;
+      --tungsten-gray: #6B6B63;
+      --danger: #FF3B30;
+      --border-w: 2px;
+    }
+    body {
+      background-color: var(--concrete);
+      color: var(--ink);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .shadow-hard {
+      box-shadow: 4px 4px 0 #111111;
+    }
+    .shadow-hard-sm {
+      box-shadow: 2px 2px 0 #111111;
+    }
+    .grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0.03;
+      z-index: 999;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-[#FFB800] selection:text-[#111111]">
+  <div class="grain"></div>
+
+  <!-- Top Navigation Header -->
+  <header class="border-b-2 border-[#111111] bg-[#E4E4DC] sticky top-0 z-40 shadow-hard-sm shrink-0">
+    <div class="max-w-[1700px] mx-auto px-2.5 sm:px-4 py-2 sm:py-2.5 flex items-center justify-between gap-2">
+      <!-- Left: Brand & Navigation -->
+      <div class="flex items-center gap-1.5 sm:gap-3 shrink-0">
+        <a href="/" class="flex items-center gap-1.5 sm:gap-2 font-['Archivo_Black'] text-sm sm:text-base uppercase tracking-tight hover:text-[#FFB800] transition-colors">
+          <span class="grid h-7 w-7 place-items-center border-2 border-[#111111] bg-[#FFB800] text-[#111111] font-black text-xs sm:text-sm">74</span>
+          <span class="hidden xs:inline">TUNGSTON</span>
+        </a>
+
+        <nav class="flex items-center gap-1 sm:gap-1.5" aria-label="Navigation">
+          <a href="/" class="border-2 border-[#111111] bg-[#D8D8CF] px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-bold uppercase hover:bg-[#EEEEE6] transition-all shadow-hard-sm">
+            🏠 <span class="hidden sm:inline">DASHBOARD</span><span class="sm:hidden">HUB</span>
+          </a>
+          <a href="https://tungston-ai.vercel.app/" target="_blank" rel="noopener" class="border-2 border-[#111111] bg-[#D8D8CF] px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-bold uppercase hover:bg-[#EEEEE6] transition-all shadow-hard-sm" title="Launch Tungston AI Chatbot">
+            💬 <span class="hidden sm:inline">TUNGSTON AI</span><span class="sm:hidden">CHAT</span> ↗
+          </a>
+          <span class="border-2 border-[#111111] bg-[#FFB800] text-[#111111] px-2 sm:px-2.5 py-1 text-[11px] sm:text-xs font-black uppercase shadow-hard-sm">
+            ⚡ <span class="hidden sm:inline">PLAYGROUND</span><span class="sm:hidden">APP</span>
+          </span>
+        </nav>
+      </div>
+
+      <!-- Right: Telemetry & Free Quota status -->
+      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+        <span class="border border-[#111111] bg-[#D8D8CF] px-2 py-0.5 text-[10px] font-bold text-[#111111] uppercase hidden md:inline">
+          GPT-120B ENGINE
+        </span>
+        <div class="border-2 border-[#111111] bg-[#FFB800] px-2 sm:px-2.5 py-0.5 text-[10px] sm:text-[11px] font-black uppercase text-[#111111] shadow-hard-sm">
+          FREE TESTING: UNLOCKED
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile View Mode Switcher (< lg screens) -->
+  <div class="lg:hidden border-b-2 border-[#111111] bg-[#D8D8CF] px-2.5 py-1.5 flex items-center justify-between gap-1.5 shrink-0 shadow-hard-sm">
+    <div class="flex items-center gap-1">
+      <button id="tab-prompt-btn" onclick="setMobileTab('prompt')" class="border-2 border-[#111111] px-2.5 py-1 text-[10px] sm:text-xs uppercase font-black bg-[#FFB800] text-[#111111] shadow-hard-sm">
+        ✏️ PROMPT
+      </button>
+      <button id="tab-preview-btn" onclick="setMobileTab('preview')" class="border-2 border-[#111111] px-2.5 py-1 text-[10px] sm:text-xs uppercase font-bold bg-[#EEEEE6] text-[#111111] shadow-hard-sm flex items-center gap-1">
+        👁️ LIVE APP
+        <span id="mobile-stream-dot" class="hidden h-1.5 w-1.5 rounded-full bg-[#FFB800] animate-ping"></span>
+      </button>
+      <button id="tab-code-btn" onclick="setMobileTab('code')" class="border-2 border-[#111111] px-2.5 py-1 text-[10px] sm:text-xs uppercase font-bold bg-[#EEEEE6] text-[#111111] shadow-hard-sm">
+        💻 HTML
+      </button>
+    </div>
+    <button onclick="setMobileTab('prompt')" class="border-2 border-[#111111] bg-[#FFB800] px-2 py-0.5 text-[10px] font-black uppercase shadow-hard-sm">
+      + REVISE
+    </button>
+  </div>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 max-w-[1700px] w-full mx-auto p-2.5 sm:p-4 gap-4 flex flex-col lg:flex-row lg:h-[calc(100vh-62px)] overflow-hidden">
+    <!-- Left Pane: Prompt & Blueprints -->
+    <div id="left-pane" class="w-full lg:w-[440px] xl:w-[480px] shrink-0 flex flex-col gap-3 sm:gap-4 overflow-y-auto">
+      <!-- Prompt Card -->
+      <div class="border-2 border-[#111111] bg-[#E4E4DC] p-3.5 sm:p-4 shadow-hard space-y-3 shrink-0">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-black uppercase tracking-wider text-[#111111] flex items-center gap-1.5">
+            <span>⚡</span> APP GENERATOR (120B)
+          </span>
+          <span id="mode-badge" class="text-[10px] border border-[#111111] bg-[#EEEEE6] px-1.5 py-0.5 font-bold uppercase">
+            CREATION MODE
+          </span>
+        </div>
+
+        <p class="text-xs text-[#111111]/90 font-medium leading-relaxed">
+          Describe any tool, dashboard, calculator, or game. Powered by our 4-key Groq LPU cluster &amp; GPT-120B.
+        </p>
+
+        <form id="gen-form" onsubmit="event.preventDefault(); handleGenerate();" class="space-y-2.5">
+          <textarea
+            id="prompt-input"
+            rows="4"
+            placeholder="Describe the app you want to build (e.g. 'A brutalist invoice generator with PDF print & tax presets')..."
+            class="w-full border-2 border-[#111111] bg-[#EEEEE6] p-3 text-xs md:text-sm text-[#111111] placeholder:text-[#6B6B63] focus:outline-none focus:border-[#FFB800] resize-none font-mono font-medium leading-relaxed"
+          ></textarea>
+
+          <div class="flex items-center justify-between gap-2">
+            <span class="text-[10px] text-[#6B6B63] hidden sm:inline">
+              Press <kbd class="border border-[#111111] bg-[#EEEEE6] px-1 py-0.5">Ctrl+Enter</kbd> to run
+            </span>
+            <button
+              id="btn-submit"
+              type="submit"
+              class="w-full sm:w-auto border-2 border-[#111111] bg-[#FFB800] px-5 py-2 text-xs font-black uppercase text-[#111111] shadow-hard-sm hover:bg-[#FFB800]/90 active:translate-x-[2px] active:translate-y-[2px] transition-all flex items-center justify-center gap-2"
+            >
+              <span>CODE APP ↵</span>
+            </button>
+          </div>
+        </form>
+
+        <div id="error-box" class="hidden border-2 border-[#FF3B30] bg-[#FF3B30]/10 p-2.5 text-xs text-[#FF3B30] font-bold flex items-center justify-between">
+          <span id="error-text">⚠️ Error message</span>
+          <button onclick="document.getElementById('error-box').classList.add('hidden')" class="ml-2 hover:underline">✕</button>
+        </div>
+
+        <div id="stream-info" class="hidden border border-[#111111] bg-[#EEEEE6] px-2.5 py-1 text-[10px] font-bold text-[#111111] flex items-center justify-between">
+          <span id="info-model">ENGINE: openai/gpt-oss-120b</span>
+          <span id="info-pool">POOL: 4-Key Array</span>
+        </div>
+      </div>
+
+      <!-- Instant Blueprints Grid -->
+      <div class="border-2 border-[#111111] bg-[#E4E4DC] p-3.5 sm:p-4 shadow-hard space-y-3 flex-1 overflow-y-auto">
+        <span class="text-xs font-black uppercase tracking-wider block">
+          💡 1-CLICK APP BLUEPRINTS
+        </span>
+        <div class="grid grid-cols-1 gap-2" id="blueprints-container">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Pane: Live Sandbox Canvas & Code Inspector -->
+    <div id="right-pane" class="flex-1 border-2 border-[#111111] bg-[#E4E4DC] shadow-hard flex flex-col min-h-[500px] lg:min-h-0 overflow-hidden hidden lg:flex">
+      <!-- Toolbar -->
+      <div class="border-b-2 border-[#111111] bg-[#D8D8CF] px-2.5 sm:px-3 py-1.5 sm:py-2 flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <!-- Desktop Mode Switcher -->
+        <div class="hidden lg:flex items-center gap-1">
+          <button id="desk-preview-btn" onclick="setDeskTab('preview')" class="border-2 border-[#111111] px-3 py-1 text-xs font-black uppercase bg-[#FFB800] text-[#111111] shadow-hard-sm">
+            👁️ LIVE APP
+          </button>
+          <button id="desk-code-btn" onclick="setDeskTab('code')" class="border-2 border-[#111111] px-3 py-1 text-xs font-bold uppercase bg-[#EEEEE6] text-[#111111] hover:text-[#FFB800] shadow-hard-sm">
+            💻 HTML CODE
+          </button>
+        </div>
+
+        <!-- Mobile View Indicator -->
+        <div class="lg:hidden text-xs font-bold uppercase text-[#111111]" id="mobile-mode-title">
+          👁️ LIVE APP PREVIEW
+        </div>
+
+        <!-- Device Width Toggles (Desktop only) -->
+        <div id="device-toggles" class="hidden sm:flex items-center gap-1 border border-[#111111] bg-[#EEEEE6] px-1.5 py-0.5">
+          <button onclick="setDeviceWidth('desktop')" id="btn-dev-desktop" class="px-2 py-0.5 text-[10px] font-bold uppercase bg-[#FFB800] text-[#111111]">🖥️ Full</button>
+          <button onclick="setDeviceWidth('tablet')" id="btn-dev-tablet" class="px-2 py-0.5 text-[10px] font-bold uppercase text-[#6B6B63] hover:text-[#111111]">📟 Tablet</button>
+          <button onclick="setDeviceWidth('mobile')" id="btn-dev-mobile" class="px-2 py-0.5 text-[10px] font-bold uppercase text-[#6B6B63] hover:text-[#111111]">📱 Mobile</button>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex items-center gap-1 sm:gap-1.5 ml-auto">
+          <button onclick="reloadPreview()" class="border-2 border-[#111111] bg-[#EEEEE6] px-2 sm:px-2.5 py-1 text-[10px] sm:text-[11px] font-bold uppercase hover:bg-[#FFB800] shadow-hard-sm" title="Reload iframe">
+            🔄 RELOAD
+          </button>
+          <button onclick="copyCode()" id="btn-copy" class="border-2 border-[#111111] bg-[#EEEEE6] px-2 sm:px-2.5 py-1 text-[10px] sm:text-[11px] font-bold uppercase hover:bg-[#FFB800] shadow-hard-sm">
+            📋 COPY
+          </button>
+          <button onclick="downloadHtml()" class="border-2 border-[#111111] bg-[#FFB800] px-2 sm:px-2.5 py-1 text-[10px] sm:text-[11px] font-black uppercase text-[#111111] shadow-hard-sm hover:bg-[#FFB800]/90">
+            💾 EXPORT
+          </button>
+        </div>
+      </div>
+
+      <!-- Canvas Content -->
+      <div class="flex-1 bg-[#EEEEE6] p-1.5 sm:p-3 flex items-center justify-center overflow-auto relative min-h-0">
+        <!-- Preview Container -->
+        <div id="preview-wrapper" class="w-full h-full border-2 border-[#111111] bg-white shadow-hard relative flex flex-col transition-all duration-200">
+          <!-- Loading Stream Banner -->
+          <div id="stream-overlay" class="hidden absolute top-2 right-2 z-20 border-2 border-[#111111] bg-[#FFB800] text-[#111111] px-2.5 py-1 text-[10px] sm:text-xs font-black uppercase shadow-hard-sm flex items-center gap-1.5">
+            <span class="animate-spin">⚙️</span>
+            <span>SYNTHESIZING LIVE HTML...</span>
+          </div>
+
+          <iframe
+            id="preview-iframe"
+            title="Tungsten Live App Preview"
+            sandbox="allow-scripts allow-modals allow-forms allow-same-origin"
+            class="w-full h-full min-h-[450px] border-none bg-white flex-1"
+          ></iframe>
+        </div>
+
+        <!-- Code Container (hidden by default) -->
+        <div id="code-wrapper" class="hidden w-full h-full border-2 border-[#111111] bg-[#111111] p-3 sm:p-4 text-xs font-mono text-[#EEEEE6] overflow-auto">
+          <pre id="code-display" class="whitespace-pre-wrap leading-relaxed select-all"></pre>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const API_ENDPOINT = "https://tungston-ai.vercel.app/api/playground/generate";
+
+    const DEFAULT_APP_HTML = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tungsten Focus & Tasks</title>
+  <script src="https://cdn.tailwindcss.com"><\/script>
+  <style>
+    body { background-color: #24272B; color: #F2EFE6; font-family: monospace; }
+    .shadow-hard { box-shadow: 4px 4px 0 #0B0C0D; }
+    .shadow-hard-sm { box-shadow: 2px 2px 0 #0B0C0D; }
+  </style>
+</head>
+<body class="p-4 sm:p-6 min-h-screen flex flex-col items-center justify-center">
+  <div class="w-full max-w-lg border-2 border-[#0B0C0D] bg-[#2E3237] p-4 sm:p-6 shadow-hard space-y-5">
+    <div class="flex items-center justify-between border-b-2 border-[#0B0C0D] pb-3">
+      <div class="flex items-center gap-2">
+        <span class="grid h-7 w-7 place-items-center bg-[#FFB800] text-[#0B0C0D] font-black text-sm">74</span>
+        <h1 class="text-sm sm:text-base font-bold tracking-tight uppercase">FOCUS & TASK WORKBENCH</h1>
+      </div>
+      <span class="bg-[#3A3F45] border border-[#0B0C0D] px-2 py-0.5 text-[10px] font-bold text-[#FFB800]">READY</span>
+    </div>
+
+    <div class="border-2 border-[#0B0C0D] bg-[#24272B] p-4 sm:p-5 text-center shadow-hard space-y-3">
+      <div id="timer-display" class="text-4xl sm:text-5xl font-black text-[#FFB800] tracking-wider">25:00</div>
+      <div class="flex flex-wrap justify-center gap-2">
+        <button id="btn-toggle" onclick="toggleTimer()" class="border-2 border-[#0B0C0D] bg-[#FFB800] text-[#0B0C0D] px-4 py-1.5 text-xs font-black uppercase shadow-hard-sm">START</button>
+        <button onclick="resetTimer(25)" class="border-2 border-[#0B0C0D] bg-[#3A3F45] text-[#F2EFE6] px-3 py-1.5 text-xs font-bold uppercase shadow-hard-sm">25M</button>
+        <button onclick="resetTimer(5)" class="border-2 border-[#0B0C0D] bg-[#3A3F45] text-[#F2EFE6] px-3 py-1.5 text-xs font-bold uppercase shadow-hard-sm">5M</button>
+      </div>
+    </div>
+
+    <div class="space-y-3">
+      <div class="text-xs font-bold text-[#FFB800] uppercase tracking-wider">Daily Directives</div>
+      <div class="flex gap-2">
+        <input id="task-input" type="text" placeholder="Add a new task..." class="flex-1 border-2 border-[#0B0C0D] bg-[#24272B] px-3 py-1.5 text-xs text-[#F2EFE6] focus:outline-none focus:border-[#FFB800]" onkeydown="if(event.key==='Enter') addTask()">
+        <button onclick="addTask()" class="border-2 border-[#0B0C0D] bg-[#FFB800] text-[#0B0C0D] px-3 py-1.5 text-xs font-black uppercase shadow-hard-sm">+</button>
+      </div>
+      <ul id="task-list" class="space-y-1.5 text-xs max-h-40 overflow-y-auto"></ul>
+    </div>
+  </div>
+
+  <script>
+    let timeLeft = 1500;
+    let timerId = null;
+    function updateDisplay() {
+      const m = Math.floor(timeLeft / 60).toString().padStart(2, '0');
+      const s = (timeLeft % 60).toString().padStart(2, '0');
+      document.getElementById('timer-display').innerText = m + ':' + s;
+    }
+    function toggleTimer() {
+      const btn = document.getElementById('btn-toggle');
+      if (timerId) { clearInterval(timerId); timerId = null; btn.innerText = 'RESUME'; }
+      else {
+        timerId = setInterval(() => {
+          if (timeLeft > 0) { timeLeft--; updateDisplay(); }
+          else { clearInterval(timerId); timerId = null; btn.innerText = 'START'; alert('Timer complete!'); }
+        }, 1000);
+        btn.innerText = 'PAUSE';
+      }
+    }
+    function resetTimer(m) {
+      if (timerId) clearInterval(timerId);
+      timerId = null; timeLeft = m * 60; updateDisplay();
+      document.getElementById('btn-toggle').innerText = 'START';
+    }
+    let tasks = JSON.parse(localStorage.getItem('tungsten_demo_tasks') || '["Verify 4-key Groq pool", "Launch live HTML app", "Deploy to Vercel"]');
+    function renderTasks() {
+      const list = document.getElementById('task-list');
+      list.innerHTML = '';
+      tasks.forEach((t, i) => {
+        const li = document.createElement('li');
+        li.className = 'flex items-center justify-between border border-[#0B0C0D] bg-[#24272B] px-3 py-1.5 text-xs';
+        li.innerHTML = '<span>' + t + '</span><button onclick="deleteTask(' + i + ')" class="text-[#FF3B30] hover:text-[#FFB800] font-bold">×</button>';
+        list.appendChild(li);
+      });
+      localStorage.setItem('tungsten_demo_tasks', JSON.stringify(tasks));
+    }
+    function addTask() {
+      const inp = document.getElementById('task-input');
+      const v = inp.value.trim();
+      if (!v) return;
+      tasks.push(v); inp.value = ''; renderTasks();
+    }
+    function deleteTask(i) { tasks.splice(i, 1); renderTasks(); }
+    renderTasks();
+  <\/script>
+</body>
+</html>`;
+
+    const BLUEPRINTS = [
+      {
+        icon: "⏱️",
+        title: "Pomodoro & Task Board",
+        desc: "Customizable intervals, audio chime, and localStorage saving.",
+        prompt: "Create a brutalist Pomodoro Timer with customizable work/break intervals, sound chime, and a localStorage task list."
+      },
+      {
+        icon: "💰",
+        title: "Invoice & Tax Generator",
+        desc: "Line-item invoicing, automatic tax calculating, and 1-click PDF print.",
+        prompt: "Build an interactive client invoice generator that calculates subtotal, discounts, tax rates, and has a 1-click 'Print to PDF' view."
+      },
+      {
+        icon: "📊",
+        title: "Kanban Board Drag & Drop",
+        desc: "3-column workflow board with interactive task card dragging.",
+        prompt: "Create a 3-column Kanban board (To Do, In Progress, Done) with smooth drag and drop, color tags, and localStorage saving."
+      },
+      {
+        icon: "🎨",
+        title: "WCAG Contrast & Palette",
+        desc: "Color generator testing contrast ratios against WCAG AAA.",
+        prompt: "Build an interactive color palette generator that tests foreground/background contrast ratios against WCAG AA and AAA standards in real time."
+      },
+      {
+        icon: "📝",
+        title: "Markdown Scratchpad",
+        desc: "Split-screen editor with real-time preview, word count, and HTML export.",
+        prompt: "Create a distraction-free split-screen Markdown editor with live preview, word/character count, reading time, and HTML export."
+      },
+      {
+        icon: "🕹️",
+        title: "Retro 80s Arcade Game",
+        desc: "HTML5 canvas arcade game with keyboard controls and score tracker.",
+        prompt: "Build a retro 80s arcade game in HTML5 canvas with sound effects, high score tracker in localStorage, and keyboard controls."
+      }
+    ];
+
+    let currentHtml = DEFAULT_APP_HTML;
+    let isGenerating = false;
+    let promptHistory = [];
+    let activeTab = "preview"; // "preview" | "code"
+    let mobileView = "prompt"; // "prompt" | "preview" | "code"
+
+    // Populate blueprints
+    const bpContainer = document.getElementById("blueprints-container");
+    BLUEPRINTS.forEach(b => {
+      const btn = document.createElement("button");
+      btn.className = "border-2 border-[#111111] bg-[#EEEEE6] p-2.5 text-left font-mono hover:border-[#FFB800] transition-colors shadow-hard-sm group";
+      btn.innerHTML = `
+        <div class="flex items-center gap-2">
+          <span class="text-base">${b.icon}</span>
+          <span class="font-bold text-xs group-hover:text-[#FFB800]">${b.title}</span>
+        </div>
+        <p class="text-[11px] text-[#6B6B63] mt-1 line-clamp-2 leading-relaxed">${b.desc}</p>
+      `;
+      btn.onclick = () => {
+        document.getElementById("prompt-input").value = b.prompt;
+        handleGenerate(b.prompt);
+      };
+      bpContainer.appendChild(btn);
+    });
+
+    // Initial render
+    renderIframe(currentHtml);
+
+    function renderIframe(html) {
+      const iframe = document.getElementById("preview-iframe");
+      iframe.srcdoc = html;
+      document.getElementById("code-display").innerText = html;
+    }
+
+    function reloadPreview() {
+      const iframe = document.getElementById("preview-iframe");
+      iframe.srcdoc = currentHtml;
+    }
+
+    function setMobileTab(tab) {
+      mobileView = tab;
+      const leftPane = document.getElementById("left-pane");
+      const rightPane = document.getElementById("right-pane");
+      const previewWrapper = document.getElementById("preview-wrapper");
+      const codeWrapper = document.getElementById("code-wrapper");
+
+      // Update buttons
+      document.getElementById("tab-prompt-btn").className = tab === 'prompt'
+        ? "border-2 border-[#111111] px-2.5 py-1 text-[10px] sm:text-xs uppercase font-black bg-[#FFB800] text-[#111111] shadow-hard-sm"
+        : "border-2 border-[#111111] px-2.5 py-1 text-[10px] sm:text-xs uppercase font-bold bg-[#EEEEE6] text-[#111111] shadow-hard-sm";
+
+      document.getElementById("tab-preview-btn").className = tab === 'preview'
+        ? "border-2 border-[#111111] px-2.5 py-1 text-[10px] sm:text-xs uppercase font-black bg-[#FFB800] text-[#111111] shadow-hard-sm flex items-center gap-1"
+        : "border-2 border-[#111111] px-2.5 py-1 text-[10px] sm:text-xs uppercase font-bold bg-[#EEEEE6] text-[#111111] shadow-hard-sm flex items-center gap-1";
+
+      document.getElementById("tab-code-btn").className = tab === 'code'
+        ? "border-2 border-[#111111] px-2.5 py-1 text-[10px] sm:text-xs uppercase font-black bg-[#FFB800] text-[#111111] shadow-hard-sm"
+        : "border-2 border-[#111111] px-2.5 py-1 text-[10px] sm:text-xs uppercase font-bold bg-[#EEEEE6] text-[#111111] shadow-hard-sm";
+
+      if (tab === "prompt") {
+        leftPane.classList.remove("hidden");
+        rightPane.classList.add("hidden");
+      } else if (tab === "preview") {
+        leftPane.classList.add("hidden");
+        rightPane.classList.remove("hidden");
+        previewWrapper.classList.remove("hidden");
+        codeWrapper.classList.add("hidden");
+        document.getElementById("mobile-mode-title").innerText = "👁️ LIVE APP PREVIEW";
+      } else if (tab === "code") {
+        leftPane.classList.add("hidden");
+        rightPane.classList.remove("hidden");
+        previewWrapper.classList.add("hidden");
+        codeWrapper.classList.remove("hidden");
+        document.getElementById("mobile-mode-title").innerText = "💻 HTML CODE INSPECTOR";
+      }
+    }
+
+    function setDeskTab(tab) {
+      activeTab = tab;
+      const previewWrapper = document.getElementById("preview-wrapper");
+      const codeWrapper = document.getElementById("code-wrapper");
+      const deskPrevBtn = document.getElementById("desk-preview-btn");
+      const deskCodeBtn = document.getElementById("desk-code-btn");
+
+      if (tab === "preview") {
+        previewWrapper.classList.remove("hidden");
+        codeWrapper.classList.add("hidden");
+        deskPrevBtn.className = "border-2 border-[#111111] px-3 py-1 text-xs font-black uppercase bg-[#FFB800] text-[#111111] shadow-hard-sm";
+        deskCodeBtn.className = "border-2 border-[#111111] px-3 py-1 text-xs font-bold uppercase bg-[#EEEEE6] text-[#111111] hover:text-[#FFB800] shadow-hard-sm";
+      } else {
+        previewWrapper.classList.add("hidden");
+        codeWrapper.classList.remove("hidden");
+        deskPrevBtn.className = "border-2 border-[#111111] px-3 py-1 text-xs font-bold uppercase bg-[#EEEEE6] text-[#111111] hover:text-[#FFB800] shadow-hard-sm";
+        deskCodeBtn.className = "border-2 border-[#111111] px-3 py-1 text-xs font-black uppercase bg-[#FFB800] text-[#111111] shadow-hard-sm";
+      }
+    }
+
+    function setDeviceWidth(dev) {
+      const wrap = document.getElementById("preview-wrapper");
+      document.getElementById("btn-dev-desktop").className = dev === 'desktop' ? "px-2 py-0.5 text-[10px] font-bold uppercase bg-[#FFB800] text-[#111111]" : "px-2 py-0.5 text-[10px] font-bold uppercase text-[#6B6B63] hover:text-[#111111]";
+      document.getElementById("btn-dev-tablet").className = dev === 'tablet' ? "px-2 py-0.5 text-[10px] font-bold uppercase bg-[#FFB800] text-[#111111]" : "px-2 py-0.5 text-[10px] font-bold uppercase text-[#6B6B63] hover:text-[#111111]";
+      document.getElementById("btn-dev-mobile").className = dev === 'mobile' ? "px-2 py-0.5 text-[10px] font-bold uppercase bg-[#FFB800] text-[#111111]" : "px-2 py-0.5 text-[10px] font-bold uppercase text-[#6B6B63] hover:text-[#111111]";
+
+      if (dev === "desktop") {
+        wrap.style.maxWidth = "100%";
+      } else if (dev === "tablet") {
+        wrap.style.maxWidth = "768px";
+      } else if (dev === "mobile") {
+        wrap.style.maxWidth = "375px";
+      }
+    }
+
+    async function handleGenerate(customPrompt) {
+      const input = document.getElementById("prompt-input");
+      const text = (customPrompt || input.value).trim();
+      if (!text || isGenerating) return;
+
+      const errBox = document.getElementById("error-box");
+      const errText = document.getElementById("error-text");
+      errBox.classList.add("hidden");
+
+      isGenerating = true;
+      document.getElementById("btn-submit").innerHTML = '<span class="animate-spin">⏳</span><span>SYNTHESIZING...</span>';
+      document.getElementById("btn-submit").disabled = true;
+      document.getElementById("stream-overlay").classList.remove("hidden");
+      document.getElementById("mobile-stream-dot").classList.remove("hidden");
+
+      // Auto-switch to preview on mobile
+      setMobileTab("preview");
+      setDeskTab("preview");
+
+      try {
+        const res = await fetch(API_ENDPOINT, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            prompt: text,
+            existingHtml: currentHtml !== DEFAULT_APP_HTML ? currentHtml : undefined,
+            history: promptHistory.map(p => ({ role: "user", content: p }))
+          })
+        });
+
+        if (!res.ok) {
+          const errData = await res.json().catch(() => ({}));
+          throw new Error(errData.error || `Server responded with status ${res.status}`);
+        }
+
+        const modelUsed = res.headers.get("X-Tungsten-Model") || "openai/gpt-oss-120b";
+        const keyPool = res.headers.get("X-Tungsten-Key-Pool") || "Pool Active";
+        document.getElementById("info-model").innerText = `ENGINE: ${modelUsed}`;
+        document.getElementById("info-pool").innerText = `POOL: ${keyPool}`;
+        document.getElementById("stream-info").classList.remove("hidden");
+
+        const reader = res.body.getReader();
+        const decoder = new TextDecoder();
+        let accumulatedHtml = "";
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          accumulatedHtml += decoder.decode(value, { stream: true });
+          currentHtml = accumulatedHtml;
+          renderIframe(currentHtml);
+        }
+
+        promptHistory.push(text);
+        input.value = "";
+        document.getElementById("mode-badge").innerText = "REVISE MODE";
+        input.placeholder = "Ask for revisions (e.g. 'Add sound chime when timer ends', 'Add dark mode toggle')...";
+      } catch (err) {
+        errText.innerText = `⚠️ ${err.message || 'Generation failed.'}`;
+        errBox.classList.remove("hidden");
+      } finally {
+        isGenerating = false;
+        document.getElementById("btn-submit").innerHTML = currentHtml !== DEFAULT_APP_HTML ? '<span>UPDATE APP ↵</span>' : '<span>CODE APP ↵</span>';
+        document.getElementById("btn-submit").disabled = false;
+        document.getElementById("stream-overlay").classList.add("hidden");
+        document.getElementById("mobile-stream-dot").classList.add("hidden");
+      }
+    }
+
+    function copyCode() {
+      navigator.clipboard.writeText(currentHtml);
+      const btn = document.getElementById("btn-copy");
+      btn.innerText = "✓ COPIED";
+      setTimeout(() => btn.innerText = "📋 COPY", 2000);
+    }
+
+    function downloadHtml() {
+      const blob = new Blob([currentHtml], { type: "text/html;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `tungsten-app-${Date.now()}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    // Ctrl+Enter shortcut
+    document.getElementById("prompt-input").addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleGenerate();
+      }
+    });
+  </script>
+</body>
+</html>
