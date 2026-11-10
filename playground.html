@@ -417,6 +417,16 @@
 
         <!-- Action Buttons -->
         <div class="flex items-center gap-1 sm:gap-1.5 ml-auto">
+          <!-- Maximize App Canvas / Focus Mode Button -->
+          <button
+            id="btn-focus-mode"
+            onclick="toggleFocusMode()"
+            class="border-2 border-[#111111] bg-[#EEEEE6] px-2 sm:px-2.5 py-1 text-[10px] sm:text-[11px] font-bold uppercase hover:bg-[#FFB800] shadow-hard-sm flex items-center gap-1"
+            title="Maximize live app canvas to take up all the space, while keeping the small prompt box handy"
+          >
+            <span>⛶</span>
+            <span id="focus-mode-text" class="hidden xs:inline">MAX CANVAS</span>
+          </button>
           <button onclick="reloadPreview()" class="border-2 border-[#111111] bg-[#EEEEE6] px-2 sm:px-2.5 py-1 text-[10px] sm:text-[11px] font-bold uppercase hover:bg-[#FFB800] shadow-hard-sm" title="Reload iframe">
             🔄 RELOAD
           </button>
@@ -446,6 +456,69 @@
             sandbox="allow-scripts allow-modals allow-forms allow-same-origin"
             class="w-full h-full border-none bg-white flex-1"
           ></iframe>
+
+          <!-- Live Canvas Small Prompt Box (Floating over live app so user can keep editing) -->
+          <div id="live-prompt-dock" class="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 w-[95%] max-w-2xl z-30 transition-all duration-200">
+            <div class="border-2 border-[#111111] bg-[#E4E4DC]/95 backdrop-blur-md shadow-hard p-2 sm:p-2.5 flex flex-col gap-1.5">
+              <div class="flex items-center justify-between text-[10px] font-mono border-b border-[#111111]/20 pb-1">
+                <div class="flex items-center gap-1.5">
+                  <span class="bg-[#FFB800] text-[#111111] font-black px-1.5 py-0.2 shadow-hard-sm">⚡ LIVE EDIT</span>
+                  <span class="font-bold text-[#111111] hidden sm:inline">Keep revising while testing</span>
+                  <span id="live-dock-version" class="border border-[#111111] bg-[#EEEEE6] px-1 py-0.2 text-[9px] font-bold text-[#6B6B63]">v1</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <!-- Quick ideas toggle -->
+                  <button type="button" onclick="toggleDockChips()" class="border border-[#111111] bg-[#EEEEE6] px-1.5 py-0.2 text-[9px] font-bold uppercase hover:bg-[#FFB800] hidden sm:inline">
+                    💡 IDEAS
+                  </button>
+                  <!-- Minimize button -->
+                  <button type="button" onclick="setLiveDockState('minimized')" class="border border-[#111111] bg-[#EEEEE6] px-1.5 py-0.2 text-[9px] font-bold uppercase hover:bg-[#FFB800]" title="Minimize dock">
+                    _ MINIMIZE
+                  </button>
+                </div>
+              </div>
+
+              <!-- Quick suggestion chips -->
+              <div id="live-dock-chips" class="hidden flex flex-wrap items-center gap-1 pt-0.5 pb-1">
+                <button type="button" onclick="insertLiveChip('Add dark mode switch with high contrast')" class="border border-[#111111] bg-[#EEEEE6] hover:bg-[#FFB800] px-1.5 py-0.5 text-[9px] font-bold">+ Dark Mode</button>
+                <button type="button" onclick="insertLiveChip('Make buttons larger and add active click animations')" class="border border-[#111111] bg-[#EEEEE6] hover:bg-[#FFB800] px-1.5 py-0.5 text-[9px] font-bold">+ Chunky Buttons</button>
+                <button type="button" onclick="insertLiveChip('Save all data and state to localStorage')" class="border border-[#111111] bg-[#EEEEE6] hover:bg-[#FFB800] px-1.5 py-0.5 text-[9px] font-bold">+ LocalStorage</button>
+                <button type="button" onclick="insertLiveChip('Add sound effects and audio feedback')" class="border border-[#111111] bg-[#EEEEE6] hover:bg-[#FFB800] px-1.5 py-0.5 text-[9px] font-bold">+ Audio SFX</button>
+                <button type="button" onclick="insertLiveChip('Make fully responsive on mobile screens')" class="border border-[#111111] bg-[#EEEEE6] hover:bg-[#FFB800] px-1.5 py-0.5 text-[9px] font-bold">+ Mobile Polish</button>
+              </div>
+
+              <!-- Input form -->
+              <form id="live-dock-form" onsubmit="event.preventDefault(); handleLiveDockSubmit();" class="flex items-center gap-1.5">
+                <input
+                  id="live-prompt-input"
+                  type="text"
+                  placeholder="Type an edit (e.g. 'Add sound chime when timer ends', 'Change colors')..."
+                  class="flex-1 border-2 border-[#111111] bg-[#EEEEE6] px-2.5 py-1.5 text-xs text-[#111111] placeholder:text-[#6B6B63] focus:outline-none focus:border-[#FFB800] font-mono shadow-inner"
+                />
+                <button
+                  id="live-dock-submit-btn"
+                  type="submit"
+                  class="border-2 border-[#111111] bg-[#FFB800] px-3 sm:px-4 py-1.5 text-xs font-black uppercase text-[#111111] shadow-hard-sm hover:bg-[#FFB800]/90 active:translate-x-[1px] active:translate-y-[1px] shrink-0 font-mono"
+                >
+                  UPDATE ↵
+                </button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Minimized Floating Pill -->
+          <div id="live-dock-minimized-pill" class="hidden absolute bottom-3 right-3 sm:right-5 z-30">
+            <button
+              type="button"
+              onclick="setLiveDockState('expanded')"
+              class="border-2 border-[#111111] bg-[#FFB800] text-[#111111] px-3 py-1.5 text-xs font-black uppercase shadow-hard flex items-center gap-1.5 hover:bg-[#FFB800]/90 active:translate-x-[1px] active:translate-y-[1px]"
+              title="Open quick revision prompt box (Shortcut: /)"
+            >
+              <span>⚡</span>
+              <span>EDIT PROMPT</span>
+              <kbd class="border border-[#111111] bg-white/70 px-1 text-[9px] hidden sm:inline">/</kbd>
+            </button>
+          </div>
         </div>
 
         <!-- Code Container (Toggled or shown in Split view) -->
@@ -1016,6 +1089,11 @@
       // Update UI for generation
       document.getElementById("btn-submit").innerHTML = '<span class="animate-spin">⚙️</span><span>SYNTHESIZING...</span>';
       document.getElementById("btn-submit").disabled = true;
+      const liveBtn = document.getElementById("live-dock-submit-btn");
+      if (liveBtn) {
+        liveBtn.innerHTML = '<span class="animate-spin">⚙️</span><span>UPDATING...</span>';
+        liveBtn.disabled = true;
+      }
       document.getElementById("stream-overlay").classList.remove("hidden");
       document.getElementById("mobile-stream-dot").classList.remove("hidden");
 
@@ -1082,9 +1160,103 @@
         isGenerating = false;
         document.getElementById("btn-submit").innerHTML = '<span id="btn-submit-text">' + (generationMode === "refine" ? 'UPDATE APP ↵' : 'CODE APP ↵') + '</span>';
         document.getElementById("btn-submit").disabled = false;
+        const liveBtn = document.getElementById("live-dock-submit-btn");
+        if (liveBtn) {
+          liveBtn.innerHTML = 'UPDATE ↵';
+          liveBtn.disabled = false;
+        }
+        const dockVer = document.getElementById("live-dock-version");
+        if (dockVer) {
+          dockVer.innerText = `v${currentVersion}`;
+        }
         document.getElementById("stream-overlay").classList.add("hidden");
         document.getElementById("mobile-stream-dot").classList.add("hidden");
       }
+    }
+
+    // ==========================================
+    // LIVE CANVAS QUICK PROMPT DOCK
+    // ==========================================
+    function handleLiveDockSubmit() {
+      const inp = document.getElementById("live-prompt-input");
+      const text = inp.value.trim();
+      if (!text || isGenerating) return;
+
+      // Sync with main prompt textarea
+      document.getElementById("prompt-input").value = text;
+      setGenerationMode("refine");
+      handleGenerate(text);
+      inp.value = "";
+    }
+
+    function toggleDockChips() {
+      const chips = document.getElementById("live-dock-chips");
+      chips.classList.toggle("hidden");
+    }
+
+    function insertLiveChip(chipText) {
+      const inp = document.getElementById("live-prompt-input");
+      inp.value = chipText;
+      inp.focus();
+    }
+
+    function setLiveDockState(state) {
+      const dock = document.getElementById("live-prompt-dock");
+      const pill = document.getElementById("live-dock-minimized-pill");
+      if (!dock || !pill) return;
+      if (state === "minimized") {
+        dock.classList.add("hidden");
+        pill.classList.remove("hidden");
+        localStorage.setItem("tungsten_dock_state", "minimized");
+      } else {
+        dock.classList.remove("hidden");
+        pill.classList.add("hidden");
+        localStorage.setItem("tungsten_dock_state", "expanded");
+        const inp = document.getElementById("live-prompt-input");
+        if (inp) inp.focus();
+      }
+    }
+
+    let isFocusMode = false;
+    function toggleFocusMode() {
+      isFocusMode = !isFocusMode;
+      const leftPane = document.getElementById("left-pane");
+      const splitter = document.getElementById("drag-splitter");
+      const rightPane = document.getElementById("right-pane");
+      const btnText = document.getElementById("focus-mode-text");
+
+      if (isFocusMode) {
+        leftPane.classList.add("hidden");
+        splitter.classList.add("hidden");
+        rightPane.classList.remove("ml-0", "lg:ml-2");
+        if (btnText) btnText.innerText = "RESTORE PANELS";
+        // Always ensure dock is open in focus mode so user has prompt box
+        setLiveDockState("expanded");
+      } else {
+        leftPane.classList.remove("hidden");
+        splitter.classList.remove("hidden");
+        rightPane.classList.add("lg:ml-2");
+        if (btnText) btnText.innerText = "MAX CANVAS";
+      }
+    }
+
+    // Shortcut keys: '/' opens live dock, Escape closes it
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "/" && document.activeElement.tagName !== "INPUT" && document.activeElement.tagName !== "TEXTAREA") {
+        e.preventDefault();
+        setLiveDockState("expanded");
+        const inp = document.getElementById("live-prompt-input");
+        if (inp) inp.focus();
+      }
+      if (e.key === "Escape" && document.activeElement.id === "live-prompt-input") {
+        setLiveDockState("minimized");
+      }
+    });
+
+    // Check saved dock state
+    const savedDockState = localStorage.getItem("tungsten_dock_state");
+    if (savedDockState === "minimized") {
+      setLiveDockState("minimized");
     }
 
     function copyCode() {
