@@ -1,7 +1,10 @@
 {
   "cleanUrls": true,
   "rewrites": [
-    { "source": "/playground", "destination": "/playground.html" }
+    { "source": "/playground", "destination": "/index.html" },
+    { "source": "/ai", "destination": "/index.html" },
+    { "source": "/chat", "destination": "/index.html" },
+    { "source": "/builder", "destination": "/index.html" }
   ],
   "headers": [
     {

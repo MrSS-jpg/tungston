@@ -1,93 +1,555 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TUNGSTON — heavy-duty AI tooling</title>
-<meta name="description" content="Tungston is a heavy-duty AI foundry featuring Tungston AI flagship chatbot and the autonomous live HTML App Playground.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>TUNGSTON — Unified Heavy-Duty AI Foundry</title>
+  <meta name="description" content="Tungston Foundry unites conversational intelligence (Tungston AI) and autonomous single-file web app synthesis (HTML Playground) directly into one high-torque brutalist workstation.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <link rel="stylesheet" href="style.css">
 </head>
-<body>
+<body class="antialiased selection:bg-[#FFB800] selection:text-[#111111]">
 
-<div class="grain"></div>
+  <!-- Ambient Brutalist Grain -->
+  <div class="grain"></div>
 
-<header class="topbar">
-  <div class="elemtag">
-    <span class="elemtag__sym">W</span>
-    <span class="elemtag__num">74</span>
-    <span class="elemtag__name">TUNGSTON</span>
+  <!-- Mechanical Matrix Shutter Overlay for High-Torque Tool Switching Animations -->
+  <div id="matrix-shutter" class="matrix-shutter" aria-hidden="true">
+    <div class="shutter-door shutter-top"></div>
+    <div class="shutter-banner">
+      <span class="shutter-tag">ELEMENT 74 // FOUNDRY MATRIX</span>
+      <span id="shutter-text" class="shutter-title">SWITCHING TOOL...</span>
+      <div class="shutter-hazard"></div>
+    </div>
+    <div class="shutter-door shutter-bottom"></div>
   </div>
-  <div class="status" id="status">
-    <span class="status__dot"></span>
-    <span class="status__text">SYSTEMS ONLINE — <span id="clock">00:00:00</span></span>
-  </div>
-</header>
 
-<main>
-  <section class="hero">
-    <h1 class="wordmark">
-      TUNGSTON
-      <span class="wordmark__glow" aria-hidden="true">TUNGSTON</span>
-    </h1>
-    <p class="tagline">heavy-duty ai tooling. no fluff, no filler, drawn out straight and hard like wire.</p>
-    <p class="subtagline">two core engines. conversational intelligence &amp; autonomous html synthesis.</p>
-  </section>
+  <!-- Global Sticky Topbar -->
+  <header class="topbar">
+    <div class="topbar-left">
+      <button type="button" class="elemtag" onclick="switchView('dashboard')" title="Return to Foundry Dashboard">
+        <span class="elemtag__sym">W</span>
+        <span class="elemtag__num">74</span>
+        <span class="elemtag__name">TUNGSTON</span>
+      </button>
+    </div>
 
-  <!-- Core Tool 01: Flagship Chatbot -->
-  <section class="featured" aria-label="Tungston AI">
-    <a class="feat" href="https://tungston-ai.vercel.app/" target="_blank" rel="noopener">
-      <div class="feat__glow" aria-hidden="true"></div>
-      <div class="feat__top">
-        <span class="feat__code">CORE-00 — FLAGSHIP</span>
-        <span class="feat__live"><span class="feat__dot"></span>LIVE</span>
+    <!-- Center: Global View Switcher -->
+    <nav class="view-switcher" aria-label="Tool views">
+      <button type="button" id="tab-dashboard" class="switcher-btn active" onclick="switchView('dashboard')" title="Foundry Dashboard">
+        <span>🏠</span>
+        <span class="hidden xs:inline">FOUNDRY</span>
+      </button>
+      <button type="button" id="tab-ai" class="switcher-btn" onclick="switchView('ai')" title="Flagship Conversational Chatbot">
+        <span>💬</span>
+        <span class="hidden sm:inline">TUNGSTON </span><span>AI</span>
+        <span class="btn-chip">CORE-00</span>
+      </button>
+      <button type="button" id="tab-playground" class="switcher-btn" onclick="switchView('playground')" title="Autonomous HTML App Playground">
+        <span>⚡</span>
+        <span class="hidden sm:inline">APP </span><span>PLAYGROUND</span>
+        <span class="btn-chip">BUILDER</span>
+      </button>
+    </nav>
+
+    <!-- Right: Systems Status & Clock -->
+    <div class="topbar-right">
+      <div class="status" id="status">
+        <span class="status__dot"></span>
+        <span class="status__text"><span class="status-label">SYSTEMS ONLINE —</span> <span id="clock">00:00:00</span></span>
       </div>
-      <h2 class="feat__title">TUNGSTON<br>AI</h2>
-      <p class="feat__desc">The main chatbot. High-speed multi-turn reasoning powered by Qwen 27B &amp; GPT-120B, persistent repository context injection, built-in edge image generation, and Markdown export.</p>
-      <div class="feat__cta">
-        <span>LAUNCH CHATBOT</span>
-        <span class="feat__arrow">↗</span>
+    </div>
+  </header>
+
+  <!-- ============================================================
+       VIEW 1: FOUNDRY MAIN DASHBOARD
+       ============================================================ -->
+  <section id="view-dashboard" class="app-view active">
+    <main>
+      <section class="hero">
+        <h1 class="wordmark">
+          TUNGSTON
+          <span class="wordmark__glow" aria-hidden="true">TUNGSTON</span>
+        </h1>
+        <p class="tagline">heavy-duty ai tooling. no fluff, no filler, drawn out straight and hard like wire.</p>
+        <p class="subtagline">two core engines baked right into one foundry. conversational intelligence &amp; autonomous html synthesis.</p>
+      </section>
+
+      <!-- Launch Station 01: Flagship Chatbot -->
+      <section class="featured" aria-label="Tungston AI">
+        <div class="feat" onclick="switchView('ai')" role="button" tabindex="0" onkeydown="if(event.key==='Enter') switchView('ai')">
+          <div class="feat__glow" aria-hidden="true"></div>
+          <div class="feat__top">
+            <span class="feat__code">CORE-00 — FLAGSHIP CHATBOT</span>
+            <span class="feat__live"><span class="feat__dot"></span>LIVE &amp; BAKED IN</span>
+          </div>
+          <h2 class="feat__title">TUNGSTON<br>AI</h2>
+          <p class="feat__desc">High-speed multi-turn reasoning powered by Groq LPU cluster (Qwen 2.5 72B &amp; GPT-120B). Features instant streaming responses, markdown tables, copyable syntax-highlighted code blocks, and model switching.</p>
+          <div class="feat__cta">
+            <span>LAUNCH CHATBOT</span>
+            <span class="feat__arrow">↗</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Launch Station 02: Autonomous HTML App Playground -->
+      <p class="grid__label">AUTONOMOUS BUILDER</p>
+      <section class="grid" aria-label="Tungston tools">
+        <div class="card card--playground" onclick="switchView('playground')" role="button" tabindex="0" onkeydown="if(event.key==='Enter') switchView('playground')">
+          <div class="card__top">
+            <span class="card__code">BUILDER-01 — 120B ENGINE</span>
+            <span class="card__arrow">→</span>
+          </div>
+          <h2 class="card__title">HTML APP<br>PLAYGROUND</h2>
+          <p class="card__desc">Autonomous single-file web app generator. Describe any tool, dashboard, calculator, or game and test it live in a browser sandbox with real-time streaming, revise mode, split-view slider, and 1-click HTML export.</p>
+          <div class="card__bar"></div>
+        </div>
+      </section>
+
+      <!-- Material Specifications -->
+      <section class="specsheet" aria-label="Material specification">
+        <div class="specsheet__row">
+          <span>MATERIAL</span><span>PURE, UNPOLISHED AI TOOLING</span>
+        </div>
+        <div class="specsheet__row">
+          <span>ARCHITECTURE</span><span>ALL ENGINES BAKED INTO MAIN DASHBOARD</span>
+        </div>
+        <div class="specsheet__row">
+          <span>LATENCY</span><span>SUB-MILLISECOND IN-MEMORY VIEW SWITCHING</span>
+        </div>
+        <div class="specsheet__row">
+          <span>MELTING POINT</span><span>DOES NOT MELT UNDER LOAD</span>
+        </div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>TUNGSTON — built raw, shipped straight.</span>
+      <span class="footer__year" id="year"></span>
+    </footer>
+  </section>
+
+  <!-- ============================================================
+       VIEW 2: BAKED-IN TUNGSTON AI CHAT ENGINE
+       ============================================================ -->
+  <section id="view-ai" class="app-view">
+    <div class="chat-view">
+      <!-- Sub-control Bar -->
+      <div class="chat-subbar overflow-x-auto flex-nowrap scrollbar-none">
+        <div class="chat-subbar-left">
+          <button type="button" class="subbar-btn" onclick="switchView('dashboard')" title="Return to Dashboard">
+            <span>←</span>
+            <span>FOUNDRY</span>
+          </button>
+          <button type="button" class="subbar-btn" onclick="switchView('playground')" title="Switch to HTML App Playground">
+            <span>⚡</span>
+            <span>PLAYGROUND</span>
+          </button>
+
+          <!-- Model Switcher -->
+          <div class="model-selector" role="group" aria-label="Model Selector">
+            <button type="button" class="model-opt active" data-model="qwen-2.5-72b" onclick="setChatModel('qwen-2.5-72b')">QWEN 72B</button>
+            <button type="button" class="model-opt" data-model="llama-3.3-70b" onclick="setChatModel('llama-3.3-70b')">LLAMA 70B</button>
+            <button type="button" class="model-opt" data-model="openai/gpt-oss-120b" onclick="setChatModel('openai/gpt-oss-120b')">GPT 120B</button>
+          </div>
+        </div>
+
+        <div class="chat-subbar-right">
+          <button type="button" class="subbar-btn" onclick="newChat()" title="Start New Session">
+            <span>+</span>
+            <span>NEW CHAT</span>
+          </button>
+          <button type="button" class="subbar-btn" onclick="exportChat()" title="Export Markdown File">
+            <span>⬇</span>
+            <span>EXPORT</span>
+          </button>
+        </div>
       </div>
-    </a>
-  </section>
 
-  <!-- Core Tool 02: Autonomous Playground -->
-  <p class="grid__label">AUTONOMOUS BUILDER</p>
-  <section class="grid grid--single" aria-label="Tungston tools">
-    <a class="card card--playground" href="/playground">
-      <div class="card__top">
-        <span class="card__code">BUILDER-01 — 120B ENGINE</span>
-        <span class="card__arrow">→</span>
+      <!-- Messages Scroll Area -->
+      <div class="chat-scroll" id="chat-scroll">
+        <!-- Welcome Hero (shown when no messages) -->
+        <div class="chat-welcome" id="chat-welcome">
+          <div class="chat-welcome__badge">CORE-00 // CONVERSATIONAL INTELLIGENCE</div>
+          <h2 class="chat-welcome__title">TUNGSTON AI</h2>
+          <p class="chat-welcome__desc">Industrial-grade precision intelligence backed by a 4-key Groq LPU cluster. Ask any engineering problem, architecture critique, algorithm design, or system refactoring.</p>
+          
+          <div class="prompt-suggestions">
+            <button type="button" class="prompt-chip" onclick="sendPromptSuggestion('Design a zero-latency edge caching and pre-warming architecture for heavy API loads.')">
+              <span class="prompt-chip__cat">System Architecture</span>
+              <span>Design zero-latency edge caching architecture</span>
+            </button>
+            <button type="button" class="prompt-chip" onclick="sendPromptSuggestion('Analyze and eliminate mobile browser viewport wobble and layout shifts in modern web apps.')">
+              <span class="prompt-chip__cat">Frontend Optimization</span>
+              <span>Eliminate mobile viewport wobble &amp; layout shifts</span>
+            </button>
+            <button type="button" class="prompt-chip" onclick="sendPromptSuggestion('Explain the core design principles of Element 74 brutalist engineering and functional UI.')">
+              <span class="prompt-chip__cat">Design Philosophy</span>
+              <span>Element 74 brutalist engineering principles</span>
+            </button>
+            <button type="button" class="prompt-chip" onclick="sendPromptSuggestion('Write a high-concurrency Go worker pool pattern with graceful shutdown and backpressure.')">
+              <span class="prompt-chip__cat">Code Synthesis</span>
+              <span>High-concurrency Go worker pool with backpressure</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Rendered Message Bubbles -->
+        <div id="chat-message-list" class="space-y-4"></div>
       </div>
-      <h2 class="card__title">HTML APP<br>PLAYGROUND</h2>
-      <p class="card__desc">Autonomous single-file web app generator powered by GPT-120B and a 4-key Groq LPU cluster. Describe any tool, dashboard, calculator, or game and test it live in a browser sandbox with real-time streaming, revise mode, and 1-click HTML export.</p>
-      <div class="card__bar"></div>
-    </a>
+
+      <!-- Fixed Composer Dock -->
+      <div class="chat-composer-bar">
+        <form class="composer-box" onsubmit="handleChatSubmit(event)">
+          <textarea
+            id="chat-input"
+            class="composer-textarea"
+            rows="1"
+            placeholder="Message Tungsten AI... (Enter to send, Shift+Enter for newline)"
+          ></textarea>
+          <div class="composer-actions">
+            <button type="button" id="chat-btn-stop" class="btn-stop" style="display:none;" onclick="stopChatGeneration()">
+              ■ STOP
+            </button>
+            <button type="submit" id="chat-btn-send" class="btn-send">
+              SEND ↵
+            </button>
+          </div>
+        </form>
+        <div class="composer-footer">
+          <span>GROQ LPU CLUSTER • 4-KEY AUTO-ROTATING POOL • FREE TEST PASS</span>
+          <span>SHIFT + ENTER FOR NEWLINE</span>
+        </div>
+      </div>
+    </div>
   </section>
 
-  <section class="specsheet" aria-label="Material specification">
-    <div class="specsheet__row">
-      <span>MATERIAL</span><span>PURE, UNPOLISHED AI TOOLING</span>
-    </div>
-    <div class="specsheet__row">
-      <span>DENSITY</span><span>2 CORE ENGINES / 1 FOUNDRY</span>
-    </div>
-    <div class="specsheet__row">
-      <span>MELTING POINT</span><span>DOES NOT MELT UNDER LOAD</span>
-    </div>
-    <div class="specsheet__row">
-      <span>USE CASE</span><span>WHATEVER YOU'RE BUILDING NEXT</span>
+  <!-- ============================================================
+       VIEW 3: BAKED-IN AUTONOMOUS HTML APP PLAYGROUND
+       ============================================================ -->
+  <section id="view-playground" class="app-view">
+    <div class="playground-view">
+      <!-- Sub-control Bar -->
+      <div class="playground-subbar overflow-x-auto flex-nowrap scrollbar-none">
+        <!-- Left: Quick Navigation & Proportion Slider -->
+        <div class="flex items-center gap-2 sm:gap-3 flex-nowrap shrink-0">
+          <button type="button" class="subbar-btn shrink-0" onclick="switchView('dashboard')" title="Return to Dashboard">
+            <span>←</span>
+            <span>FOUNDRY</span>
+          </button>
+          <button type="button" class="subbar-btn shrink-0" onclick="switchView('ai')" title="Switch to Tungsten AI Chat">
+            <span>💬</span>
+            <span>TUNGSTON AI</span>
+          </button>
+
+          <!-- Proportion Slider & Presets (Desktop) -->
+          <div class="hidden lg:flex items-center gap-2 border-2 border-[#111111] bg-[#EEEEE6] px-2 py-1 shadow-hard-sm shrink-0">
+            <span class="font-bold text-[10px] text-[#6B6B63] uppercase">SPLIT:</span>
+            <div class="flex items-center gap-1">
+              <button onclick="setPaneRatio(25)" class="px-1.5 py-0.5 text-[10px] font-bold border border-[#111111] bg-white hover:bg-[#FFB800]">25%</button>
+              <button onclick="setPaneRatio(34)" class="px-1.5 py-0.5 text-[10px] font-bold border border-[#111111] bg-white hover:bg-[#FFB800]">34%</button>
+              <button onclick="setPaneRatio(50)" class="px-1.5 py-0.5 text-[10px] font-bold border border-[#111111] bg-white hover:bg-[#FFB800]">50%</button>
+              <button onclick="setPaneRatio(65)" class="px-1.5 py-0.5 text-[10px] font-bold border border-[#111111] bg-white hover:bg-[#FFB800]">65%</button>
+            </div>
+            <input
+              id="workspace-ratio-slider"
+              type="range"
+              min="20"
+              max="75"
+              value="34"
+              class="w-20 cursor-ew-resize ml-1"
+              oninput="handleSliderInput(this.value)"
+              title="Adjust workspace split proportions"
+            />
+            <span id="ratio-display" class="font-mono text-[10px] font-bold min-w-[55px] text-right">34% / 66%</span>
+          </div>
+        </div>
+
+        <!-- Center: Desktop View Mode Toggles -->
+        <div class="hidden lg:flex items-center gap-1 border-2 border-[#111111] bg-[#EEEEE6] p-0.5 shadow-hard-sm shrink-0">
+          <button id="btn-tab-preview" onclick="setDeskTab('preview')" class="px-2.5 py-1 text-xs font-bold uppercase transition-colors bg-[#FFB800] text-[#111111]">
+            👁️ <span>LIVE APP</span>
+          </button>
+          <button id="btn-tab-split" onclick="setDeskTab('split')" class="px-2.5 py-1 text-xs font-bold uppercase transition-colors hover:bg-[#FFB800]/50">
+            🪟 <span>SPLIT VIEW</span>
+          </button>
+          <button id="btn-tab-code" onclick="setDeskTab('code')" class="px-2.5 py-1 text-xs font-bold uppercase transition-colors hover:bg-[#FFB800]/50">
+            💻 <span>HTML CODE</span>
+          </button>
+        </div>
+
+        <!-- Split Ratios for Split View -->
+        <div id="split-ratio-controls" class="hidden items-center gap-1 border-2 border-[#111111] bg-[#EEEEE6] p-0.5 text-[10px] font-bold shrink-0">
+          <button id="split-btn-50-50" onclick="applySplitRatio('50-50')" class="px-1.5 py-0.5 border border-[#111111] bg-[#FFB800] text-[#111111]">50/50</button>
+          <button id="split-btn-70-30" onclick="applySplitRatio('70-30')" class="px-1.5 py-0.5 border border-[#111111] bg-white hover:bg-[#FFB800]">70/30</button>
+          <button id="split-btn-30-70" onclick="applySplitRatio('30-70')" class="px-1.5 py-0.5 border border-[#111111] bg-white hover:bg-[#FFB800]">30/70</button>
+        </div>
+
+        <!-- Right: Actions & Focus Mode -->
+        <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
+          <button
+            id="focus-mode-btn"
+            type="button"
+            onclick="toggleFocusMode()"
+            class="border-2 border-[#111111] bg-[#EEEEE6] px-2 sm:px-2.5 py-1 text-xs font-bold hover:bg-[#FFB800] shadow-hard-sm flex items-center gap-1 shrink-0"
+            title="Toggle full canvas focus mode"
+          >
+            <span>⛶</span>
+            <span class="hidden sm:inline">FOCUS</span>
+          </button>
+          <button
+            id="copy-html-btn"
+            type="button"
+            onclick="copyPlaygroundHtml()"
+            class="border-2 border-[#111111] bg-[#EEEEE6] px-2 sm:px-2.5 py-1 text-xs font-bold hover:bg-[#FFB800] shadow-hard-sm flex items-center gap-1 shrink-0"
+            title="Copy executable HTML to clipboard"
+          >
+            <span>📋</span>
+            <span class="hidden sm:inline">COPY</span>
+          </button>
+          <button
+            type="button"
+            onclick="exportPlaygroundHtml()"
+            class="border-2 border-[#111111] bg-[#FFB800] text-[#111111] px-2.5 sm:px-3 py-1 text-xs font-black uppercase hover:bg-[#FFB800]/90 shadow-hard-sm flex items-center gap-1 shrink-0"
+            title="Download complete standalone HTML file"
+          >
+            <span>💾</span>
+            <span class="hidden sm:inline">EXPORT</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Mobile Workspace Tab Switcher (Visible on < lg screens) -->
+      <div class="flex lg:hidden items-center justify-between border-b-2 border-[#111111] bg-[#E4E4DC] p-1.5 shrink-0 z-20">
+        <div class="flex items-center gap-1 w-full">
+          <button id="mob-tab-builder" onclick="setMobilePlaygroundTab('builder')" class="flex-1 py-1.5 text-xs font-black uppercase text-center border-2 border-[#111111] bg-[#FFB800] text-[#111111] shadow-hard-sm">
+            📝 BUILDER
+          </button>
+          <button id="mob-tab-preview" onclick="setMobilePlaygroundTab('preview')" class="flex-1 py-1.5 text-xs font-bold uppercase text-center border-2 border-[#111111] bg-[#EEEEE6] text-[#111111] shadow-hard-sm">
+            👁️ LIVE APP
+          </button>
+          <button id="mob-tab-code" onclick="setMobilePlaygroundTab('code')" class="flex-1 py-1.5 text-xs font-bold uppercase text-center border-2 border-[#111111] bg-[#EEEEE6] text-[#111111] shadow-hard-sm">
+            💻 CODE
+          </button>
+        </div>
+      </div>
+
+      <!-- Main Resizable Workspace -->
+      <div id="workspace-container" class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+        <!-- LEFT PANE: Builder, Prompts, Blueprints, Revisions -->
+        <div
+          id="left-pane"
+          class="w-full lg:w-[34%] flex flex-col border-b-2 lg:border-b-0 lg:border-r-0 border-[#111111] bg-[#E4E4DC] overflow-y-auto shrink-0 z-10"
+        >
+          <div class="p-3 sm:p-4 space-y-3 sm:space-y-4">
+            <!-- Mode Selector -->
+            <div class="border-2 border-[#111111] bg-[#EEEEE6] p-1.5 shadow-hard-sm space-y-1.5">
+              <div class="flex items-center justify-between text-[11px] font-bold">
+                <span id="mode-status-label" class="text-[#111111]">MODE: ITERATING ON ACTIVE APP</span>
+                <span class="text-[9px] bg-[#111111] text-[#FFB800] px-1.5 py-0.2 font-black">GROQ 120B</span>
+              </div>
+              <div class="grid grid-cols-2 gap-1">
+                <button
+                  id="mode-btn-refine"
+                  type="button"
+                  onclick="setPlaygroundMode('refine')"
+                  class="border-2 border-[#111111] bg-[#FFB800] text-[#111111] py-1 text-[11px] font-black uppercase tracking-tight shadow-hard-sm"
+                >
+                  ↺ ITERATE / EDIT
+                </button>
+                <button
+                  id="mode-btn-fresh"
+                  type="button"
+                  onclick="setPlaygroundMode('fresh')"
+                  class="border-2 border-[#111111] bg-[#EEEEE6] text-[#111111] py-1 text-[11px] font-bold uppercase tracking-tight hover:bg-white"
+                >
+                  ✨ FRESH CANVAS
+                </button>
+              </div>
+            </div>
+
+            <!-- Prompt Box -->
+            <div class="border-2 border-[#111111] bg-[#EEEEE6] p-3 shadow-hard space-y-2">
+              <div class="flex items-center justify-between">
+                <label for="prompt-input" class="text-xs font-black uppercase tracking-wider text-[#111111] flex items-center gap-1.5">
+                  <span class="h-2 w-2 bg-[#FFB800] border border-[#111111]"></span>
+                  PROMPT DIRECTIVE
+                </label>
+                <span id="char-count" class="text-[10px] font-mono text-[#6B6B63]">0/4000</span>
+              </div>
+
+              <textarea
+                id="prompt-input"
+                rows="4"
+                maxlength="4000"
+                oninput="updatePromptUIState()"
+                placeholder="Describe your web application or changes to make... (e.g. 'Build an audio frequency visualizer with Web Audio API and retro meters' or 'Add dark mode toggle and export buttons')"
+                class="w-full border-2 border-[#111111] bg-white p-2.5 text-xs font-mono text-[#111111] placeholder:text-[#888880] focus:outline-none focus:border-[#FFB800] resize-y"
+              ></textarea>
+
+              <!-- Quick Modifier Chips -->
+              <div class="flex items-center gap-1.5 flex-wrap pt-0.5">
+                <span class="text-[10px] font-bold text-[#6B6B63]">QUICK:</span>
+                <button type="button" onclick="insertModifier('+ Dark Mode')" class="border border-[#111111] bg-white px-1.5 py-0.5 text-[10px] hover:bg-[#FFB800]">+ Dark Mode</button>
+                <button type="button" onclick="insertModifier('+ Chunky Buttons')" class="border border-[#111111] bg-white px-1.5 py-0.5 text-[10px] hover:bg-[#FFB800]">+ Chunky</button>
+                <button type="button" onclick="insertModifier('+ Sound Effects')" class="border border-[#111111] bg-white px-1.5 py-0.5 text-[10px] hover:bg-[#FFB800]">+ Sound</button>
+                <button type="button" onclick="insertModifier('+ Export CSV/JSON')" class="border border-[#111111] bg-white px-1.5 py-0.5 text-[10px] hover:bg-[#FFB800]">+ Export</button>
+              </div>
+
+              <!-- Primary Generate Button -->
+              <button
+                id="generate-btn"
+                type="button"
+                onclick="handlePlaygroundGenerate()"
+                class="w-full border-2 border-[#111111] bg-[#FFB800] py-2 sm:py-2.5 text-xs sm:text-sm font-black uppercase text-[#111111] shadow-hard hover:bg-[#FFB800]/90 active:translate-x-[2px] active:translate-y-[2px] active:shadow-none flex items-center justify-center gap-2 font-mono"
+              >
+                <span>⚡</span>
+                <span>GENERATE APP</span>
+              </button>
+            </div>
+
+            <!-- Tab Switcher: Blueprints vs Revision History -->
+            <div class="border-2 border-[#111111] bg-[#EEEEE6] shadow-hard-sm">
+              <div class="flex items-center border-b-2 border-[#111111] bg-[#E4E4DC]">
+                <button
+                  id="left-tab-blueprints"
+                  onclick="switchLeftTab('blueprints')"
+                  class="flex-1 py-1.5 text-xs font-black uppercase text-center border-b-2 border-[#FFB800] text-[#111111] transition-colors"
+                >
+                  💡 BLUEPRINTS (6)
+                </button>
+                <button
+                  id="left-tab-revisions"
+                  onclick="switchLeftTab('revisions')"
+                  class="flex-1 py-1.5 text-xs font-bold uppercase text-center text-[#6B6B63] hover:text-[#111111] transition-colors"
+                >
+                  📜 REVISIONS <span id="revision-count-badge">(0)</span>
+                </button>
+              </div>
+
+              <!-- Blueprints Tab Pane -->
+              <div id="blueprints-pane" class="p-2.5 space-y-2">
+                <p class="text-[11px] text-[#6B6B63] leading-tight">Instant production starters with live preview and code inspection:</p>
+                <div id="blueprints-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2"></div>
+              </div>
+
+              <!-- Revisions Tab Pane -->
+              <div id="revisions-pane" class="hidden p-2.5 space-y-2">
+                <p class="text-[11px] text-[#6B6B63] leading-tight">Prompt iteration log with 1-click snapshot restore:</p>
+                <div id="revisions-container" class="space-y-2 max-h-[360px] overflow-y-auto">
+                  <div class="text-[11px] text-[#6B6B63] italic p-3 text-center border-2 border-dashed border-[#111111]">
+                    No revisions generated yet.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- DRAGGABLE DIVIDER SPLITTER -->
+        <div
+          id="drag-splitter"
+          class="hidden lg:flex w-2 bg-[#EEEEE6] border-x-2 border-[#111111] cursor-col-resize hover:bg-[#FFB800] transition-colors items-center justify-center shrink-0 z-20 select-none group"
+          title="Drag to resize workspace split"
+        >
+          <div class="flex flex-col gap-1 items-center">
+            <span class="w-1 h-1 bg-[#111111] group-hover:bg-white rounded-full"></span>
+            <span class="w-1 h-1 bg-[#111111] group-hover:bg-white rounded-full"></span>
+            <span class="w-1 h-1 bg-[#111111] group-hover:bg-white rounded-full"></span>
+          </div>
+        </div>
+
+        <!-- RIGHT PANE: Live Preview Sandbox, Split View & Code Viewer -->
+        <div id="right-pane" class="flex-1 flex flex-col overflow-hidden bg-[#24272B] relative min-h-[380px]">
+          <!-- Live Preview Sandbox Container -->
+          <div id="preview-wrapper" class="w-full h-full flex flex-col relative">
+            <iframe
+              id="preview-iframe"
+              class="w-full h-full border-none bg-white"
+              sandbox="allow-scripts allow-modals allow-downloads allow-forms allow-same-origin"
+              title="Live App Output"
+            ></iframe>
+
+            <!-- In-Canvas Floating Revision Prompt Dock -->
+            <div
+              id="live-prompt-dock"
+              class="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-5 sm:w-[460px] max-w-[94vw] z-30 border-2 border-[#111111] bg-[#EEEEE6] p-2.5 shadow-hard font-mono"
+            >
+              <div class="flex items-center justify-between pb-1.5 mb-1.5 border-b border-[#D8D8CF]">
+                <div class="flex items-center gap-1.5 text-[10px] font-black uppercase text-[#111111]">
+                  <span class="h-2 w-2 bg-[#FFB800] border border-[#111111] animate-pulse"></span>
+                  <span>LIVE REVISION DOCK</span>
+                </div>
+                <div class="flex items-center gap-1">
+                  <span class="text-[9px] text-[#6B6B63] hidden sm:inline">PRESS ESC TO CLOSE</span>
+                  <button
+                    type="button"
+                    onclick="setLiveDockState('minimized')"
+                    class="border border-[#111111] bg-white px-1.5 text-[10px] font-bold hover:bg-[#FFB800]"
+                    title="Minimize revision dock"
+                  >
+                    _
+                  </button>
+                </div>
+              </div>
+
+              <form onsubmit="handleLiveDockSubmit(event)" class="space-y-2">
+                <input
+                  id="live-prompt-input"
+                  type="text"
+                  placeholder="Ask a change directly... (e.g. 'Make buttons larger and add sound effects')"
+                  class="w-full border-2 border-[#111111] bg-white px-2.5 py-1.5 text-xs font-mono text-[#111111] placeholder:text-[#888880] focus:outline-none focus:border-[#FFB800]"
+                />
+                <div class="flex items-center justify-between gap-1.5">
+                  <div class="flex items-center gap-1 overflow-x-auto text-[9px]">
+                    <button type="button" onclick="document.getElementById('live-prompt-input').value += ' + Dark Mode'" class="border border-[#111111] bg-white px-1 py-0.5 hover:bg-[#FFB800] shrink-0">+Dark</button>
+                    <button type="button" onclick="document.getElementById('live-prompt-input').value += ' + Vibrant Colors'" class="border border-[#111111] bg-white px-1 py-0.5 hover:bg-[#FFB800] shrink-0">+Colors</button>
+                    <button type="button" onclick="document.getElementById('live-prompt-input').value += ' + Add Sound'" class="border border-[#111111] bg-white px-1 py-0.5 hover:bg-[#FFB800] shrink-0">+Audio</button>
+                  </div>
+                  <button
+                    id="live-dock-submit-btn"
+                    type="submit"
+                    class="border-2 border-[#111111] bg-[#FFB800] px-3 sm:px-4 py-1.5 text-xs font-black uppercase text-[#111111] shadow-hard-sm hover:bg-[#FFB800]/90 active:translate-x-[1px] active:translate-y-[1px] shrink-0 font-mono"
+                  >
+                    UPDATE ↵
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            <!-- Minimized Floating Pill -->
+            <div id="live-dock-minimized-pill" class="hidden absolute bottom-3 right-3 sm:right-5 z-30">
+              <button
+                type="button"
+                onclick="setLiveDockState('expanded')"
+                class="border-2 border-[#111111] bg-[#FFB800] text-[#111111] px-3 py-1.5 text-xs font-black uppercase shadow-hard flex items-center gap-1.5 hover:bg-[#FFB800]/90 active:translate-x-[1px] active:translate-y-[1px]"
+                title="Open quick revision prompt box (Shortcut: /)"
+              >
+                <span>⚡</span>
+                <span>EDIT PROMPT</span>
+                <kbd class="border border-[#111111] bg-white/70 px-1 text-[9px] hidden sm:inline">/</kbd>
+              </button>
+            </div>
+          </div>
+
+          <!-- Standalone HTML Code Wrapper (Shown in Code or Split mode) -->
+          <div id="code-wrapper" class="hidden w-full h-full border-2 border-[#111111] bg-[#111111] p-3 sm:p-4 text-xs font-mono text-[#EEEEE6] overflow-auto min-h-[300px]">
+            <div class="flex items-center justify-between border-b border-[#333333] pb-2 mb-2 text-[10px] text-[#A0A096]">
+              <span>EXECUTABLE SOURCE CODE (STANDALONE HTML5)</span>
+              <span id="code-length-display">0 bytes</span>
+            </div>
+            <pre id="code-display" class="whitespace-pre-wrap leading-relaxed select-all font-mono"></pre>
+          </div>
+        </div>
+      </div>
     </div>
   </section>
-</main>
 
-<footer class="footer">
-  <span>TUNGSTON — built raw, shipped straight.</span>
-  <span class="footer__year" id="year"></span>
-</footer>
-
-<script src="script.js"></script>
+  <!-- Application Script -->
+  <script src="script.js"></script>
 </body>
 </html>
