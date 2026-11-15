@@ -10,6 +10,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=IBM+Plex+Mono:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <link rel="stylesheet" href="style.css">
 </head>
 <body class="antialiased selection:bg-[#FFB800] selection:text-[#111111]">
@@ -56,8 +57,12 @@
       </button>
     </nav>
 
-    <!-- Right: Systems Status & Clock -->
+    <!-- Right: Auth & Systems Status & Clock -->
     <div class="topbar-right">
+      <button type="button" id="topbar-auth-btn" class="auth-btn" onclick="openAuthModal()" title="Account & Supabase Authentication">
+        <span id="auth-status-dot" class="auth-dot guest"></span>
+        <span id="auth-status-text">GUEST PASS</span>
+      </button>
       <div class="status" id="status">
         <span class="status__dot"></span>
         <span class="status__text"><span class="status-label">SYSTEMS ONLINE —</span> <span id="clock">00:00:00</span></span>
@@ -138,91 +143,172 @@
        ============================================================ -->
   <section id="view-ai" class="app-view">
     <div class="chat-view">
-      <!-- Sub-control Bar -->
+      <!-- Sub-control Bar with Expanded Ecosystem Tools -->
       <div class="chat-subbar overflow-x-auto flex-nowrap scrollbar-none">
-        <div class="chat-subbar-left">
-          <button type="button" class="subbar-btn" onclick="switchView('dashboard')" title="Return to Dashboard">
+        <div class="chat-subbar-left shrink-0">
+          <button type="button" class="subbar-btn shrink-0" id="btn-toggle-sidebar" onclick="toggleChatSidebar()" title="Toggle Session History">
+            <span>☰</span>
+            <span class="hidden sm:inline">CHATS</span>
+            <span id="sidebar-thread-badge" class="bg-[#111111] text-[#FFB800] px-1 py-0.2 text-[9px] font-black font-mono">1</span>
+          </button>
+          <button type="button" class="subbar-btn shrink-0" onclick="switchView('dashboard')" title="Return to Dashboard">
             <span>←</span>
             <span>FOUNDRY</span>
           </button>
-          <button type="button" class="subbar-btn" onclick="switchView('playground')" title="Switch to HTML App Playground">
+          <button type="button" class="subbar-btn shrink-0" onclick="switchView('playground')" title="Switch to HTML App Playground">
             <span>⚡</span>
             <span>PLAYGROUND</span>
           </button>
 
           <!-- Model Switcher -->
-          <div class="model-selector" role="group" aria-label="Model Selector">
+          <div class="model-selector shrink-0" role="group" aria-label="Model Selector">
             <button type="button" class="model-opt active" data-model="qwen-2.5-72b" onclick="setChatModel('qwen-2.5-72b')">QWEN 72B</button>
             <button type="button" class="model-opt" data-model="llama-3.3-70b" onclick="setChatModel('llama-3.3-70b')">LLAMA 70B</button>
             <button type="button" class="model-opt" data-model="openai/gpt-oss-120b" onclick="setChatModel('openai/gpt-oss-120b')">GPT 120B</button>
           </div>
+
+          <!-- Context Capacity Gauge -->
+          <div class="context-gauge shrink-0" title="Token Context Window Capacity">
+            <div class="gauge-track">
+              <div id="context-gauge-fill" class="gauge-fill" style="width: 1%;"></div>
+            </div>
+            <span id="context-gauge-label">0 / 128K</span>
+          </div>
         </div>
 
-        <div class="chat-subbar-right">
-          <button type="button" class="subbar-btn" onclick="newChat()" title="Start New Session">
-            <span>+</span>
-            <span>NEW CHAT</span>
+        <div class="chat-subbar-right shrink-0">
+          <!-- Active Project Knowledge Badge & Button -->
+          <button type="button" class="subbar-btn shrink-0" onclick="openProjectsModal()" title="Manage Project Knowledge & Context Injection">
+            <span>📁</span>
+            <span id="active-project-label">PROJECTS</span>
           </button>
-          <button type="button" class="subbar-btn" onclick="exportChat()" title="Export Markdown File">
+
+          <!-- Image Generation Trigger Button -->
+          <button type="button" class="subbar-btn shrink-0" onclick="openImageModal()" title="Generate Images with Edge AI">
+            <span>🎨</span>
+            <span>IMAGE</span>
+          </button>
+
+          <!-- BYOK Key Trigger -->
+          <button type="button" class="subbar-btn shrink-0" onclick="openByokModal()" title="Bring Your Own API Key">
+            <span>⚙</span>
+            <span id="byok-status-label">BYOK</span>
+          </button>
+
+          <button type="button" class="subbar-btn shrink-0" onclick="newChat()" title="Start New Session">
+            <span>+</span>
+            <span>NEW</span>
+          </button>
+          <button type="button" class="subbar-btn shrink-0" onclick="exportChat()" title="Export Active Markdown File">
             <span>⬇</span>
             <span>EXPORT</span>
           </button>
         </div>
       </div>
 
-      <!-- Messages Scroll Area -->
-      <div class="chat-scroll" id="chat-scroll">
-        <!-- Welcome Hero (shown when no messages) -->
-        <div class="chat-welcome" id="chat-welcome">
-          <div class="chat-welcome__badge">CORE-00 // CONVERSATIONAL INTELLIGENCE</div>
-          <h2 class="chat-welcome__title">TUNGSTON AI</h2>
-          <p class="chat-welcome__desc">Industrial-grade precision intelligence backed by a 4-key Groq LPU cluster. Ask any engineering problem, architecture critique, algorithm design, or system refactoring.</p>
-          
-          <div class="prompt-suggestions">
-            <button type="button" class="prompt-chip" onclick="sendPromptSuggestion('Design a zero-latency edge caching and pre-warming architecture for heavy API loads.')">
-              <span class="prompt-chip__cat">System Architecture</span>
-              <span>Design zero-latency edge caching architecture</span>
+      <!-- Split Layout: Collapsible Sidebar + Main Chat Window -->
+      <div class="chat-container-split">
+        <!-- Collapsible Multi-Conversation Sessions Sidebar -->
+        <aside id="chat-sidebar" class="chat-sidebar closed">
+          <div class="chat-sidebar-head">
+            <div class="flex items-center justify-between">
+              <span class="font-black text-xs uppercase tracking-wider text-[#111111]">CHAT SESSIONS</span>
+              <button type="button" onclick="toggleChatSidebar()" class="text-xs font-bold md:hidden text-[#111111] hover:text-[#FF3B30]">✕</button>
+            </div>
+            <button
+              type="button"
+              onclick="newChat()"
+              class="w-full border-2 border-[#111111] bg-[#FFB800] py-1.5 px-3 text-xs font-black uppercase text-[#111111] shadow-hard-sm hover:bg-[#FFA000] active:translate-x-[1px] active:translate-y-[1px] flex items-center justify-center gap-1.5 font-mono"
+            >
+              <span>+</span><span>NEW CHAT</span>
             </button>
-            <button type="button" class="prompt-chip" onclick="sendPromptSuggestion('Analyze and eliminate mobile browser viewport wobble and layout shifts in modern web apps.')">
-              <span class="prompt-chip__cat">Frontend Optimization</span>
-              <span>Eliminate mobile viewport wobble &amp; layout shifts</span>
-            </button>
-            <button type="button" class="prompt-chip" onclick="sendPromptSuggestion('Explain the core design principles of Element 74 brutalist engineering and functional UI.')">
-              <span class="prompt-chip__cat">Design Philosophy</span>
-              <span>Element 74 brutalist engineering principles</span>
-            </button>
-            <button type="button" class="prompt-chip" onclick="sendPromptSuggestion('Write a high-concurrency Go worker pool pattern with graceful shutdown and backpressure.')">
-              <span class="prompt-chip__cat">Code Synthesis</span>
-              <span>High-concurrency Go worker pool with backpressure</span>
-            </button>
+            <input
+              id="chat-search"
+              type="text"
+              placeholder="Search sessions..."
+              oninput="filterChatThreads(this.value)"
+              class="chat-search-input font-mono"
+            />
           </div>
-        </div>
 
-        <!-- Rendered Message Bubbles -->
-        <div id="chat-message-list" class="space-y-4"></div>
-      </div>
+          <!-- List of Threads -->
+          <div id="chat-threads-container" class="chat-threads-list"></div>
 
-      <!-- Fixed Composer Dock -->
-      <div class="chat-composer-bar">
-        <form class="composer-box" onsubmit="handleChatSubmit(event)">
-          <textarea
-            id="chat-input"
-            class="composer-textarea"
-            rows="1"
-            placeholder="Message Tungsten AI... (Enter to send, Shift+Enter for newline)"
-          ></textarea>
-          <div class="composer-actions">
-            <button type="button" id="chat-btn-stop" class="btn-stop" style="display:none;" onclick="stopChatGeneration()">
-              ■ STOP
-            </button>
-            <button type="submit" id="chat-btn-send" class="btn-send">
-              SEND ↵
-            </button>
+          <!-- Bottom Utilities -->
+          <div class="p-2 border-t-2 border-[#111111] bg-[#EEEEE6] flex items-center justify-between text-[10px] text-[#6B6B63] font-bold">
+            <button type="button" onclick="exportAllChats()" class="hover:text-[#111111]">⬇ EXPORT ALL</button>
+            <button type="button" onclick="clearAllChats()" class="hover:text-[#FF3B30]">🗑️ CLEAR ALL</button>
           </div>
-        </form>
-        <div class="composer-footer">
-          <span>GROQ LPU CLUSTER • 4-KEY AUTO-ROTATING POOL • FREE TEST PASS</span>
-          <span>SHIFT + ENTER FOR NEWLINE</span>
+        </aside>
+
+        <!-- Mobile Sidebar Backdrop Overlay -->
+        <div id="sidebar-backdrop" class="sidebar-backdrop" onclick="toggleChatSidebar()"></div>
+
+        <!-- Chat Stream & Composer Window -->
+        <div class="flex-1 flex flex-col h-full overflow-hidden bg-[#EEEEE6]">
+          <!-- Messages Scroll Area -->
+          <div class="chat-scroll" id="chat-scroll">
+            <!-- Welcome Hero (shown when no messages) -->
+            <div class="chat-welcome" id="chat-welcome">
+              <div class="chat-welcome__badge">CORE-00 // CONVERSATIONAL INTELLIGENCE</div>
+              <h2 class="chat-welcome__title">TUNGSTON AI</h2>
+              <p class="chat-welcome__desc">Industrial-grade precision intelligence backed by a 4-key Groq LPU cluster. Ask any engineering problem, architecture critique, algorithm design, or system refactoring.</p>
+              
+              <div class="prompt-suggestions">
+                <button type="button" class="prompt-chip" onclick="sendPromptSuggestion('Design a zero-latency edge caching and pre-warming architecture for heavy API loads.')">
+                  <span class="prompt-chip__cat">System Architecture</span>
+                  <span>Design zero-latency edge caching architecture</span>
+                </button>
+                <button type="button" class="prompt-chip" onclick="sendPromptSuggestion('Analyze and eliminate mobile browser viewport wobble and layout shifts in modern web apps.')">
+                  <span class="prompt-chip__cat">Frontend Optimization</span>
+                  <span>Eliminate mobile viewport wobble &amp; layout shifts</span>
+                </button>
+                <button type="button" class="prompt-chip" onclick="sendPromptSuggestion('Explain the core design principles of Element 74 brutalist engineering and functional UI.')">
+                  <span class="prompt-chip__cat">Design Philosophy</span>
+                  <span>Element 74 brutalist engineering principles</span>
+                </button>
+                <button type="button" class="prompt-chip" onclick="sendPromptSuggestion('Write a high-concurrency Go worker pool pattern with graceful shutdown and backpressure.')">
+                  <span class="prompt-chip__cat">Code Synthesis</span>
+                  <span>High-concurrency Go worker pool with backpressure</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Rendered Message Bubbles -->
+            <div id="chat-message-list" class="space-y-4"></div>
+          </div>
+
+          <!-- Fixed Composer Dock with Quick Commands -->
+          <div class="chat-composer-bar">
+            <!-- Quick Chips Bar -->
+            <div class="flex items-center gap-1.5 overflow-x-auto scrollbar-none pb-1 text-[10px]">
+              <button type="button" onclick="insertComposerText('/image ')" class="border border-[#111111] bg-white px-2 py-0.5 hover:bg-[#FFB800] shrink-0 font-bold shadow-hard-sm">🎨 /image</button>
+              <button type="button" onclick="openProjectsModal()" class="border border-[#111111] bg-white px-2 py-0.5 hover:bg-[#FFB800] shrink-0 font-bold shadow-hard-sm">📁 + Context</button>
+              <button type="button" onclick="insertComposerText('Explain step-by-step with code: ')" class="border border-[#111111] bg-white px-2 py-0.5 hover:bg-[#FFB800] shrink-0 shadow-hard-sm">💡 Code explain</button>
+              <button type="button" onclick="insertComposerText('Provide an architectural critique of: ')" class="border border-[#111111] bg-white px-2 py-0.5 hover:bg-[#FFB800] shrink-0 shadow-hard-sm">📐 Architecture</button>
+            </div>
+
+            <form class="composer-box" onsubmit="handleChatSubmit(event)">
+              <textarea
+                id="chat-input"
+                class="composer-textarea"
+                rows="1"
+                placeholder="Message Tungsten AI or type /image <prompt>... (Enter to send, Shift+Enter for newline)"
+              ></textarea>
+              <div class="composer-actions">
+                <button type="button" id="chat-btn-stop" class="btn-stop" style="display:none;" onclick="stopChatGeneration()">
+                  ■ STOP
+                </button>
+                <button type="submit" id="chat-btn-send" class="btn-send">
+                  SEND ↵
+                </button>
+              </div>
+            </form>
+            <div class="composer-footer">
+              <span id="composer-status-meta">GROQ LPU CLUSTER • 4-KEY AUTO-ROTATING POOL • FREE TEST PASS</span>
+              <span>SHIFT + ENTER FOR NEWLINE</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -548,6 +634,271 @@
       </div>
     </div>
   </section>
+
+  <!-- ============================================================
+       MODALS: PROJECTS, BYOK, IMAGE GENERATOR, TOASTS
+       ============================================================ -->
+
+  <!-- 1. Projects & Context Knowledge Modal -->
+  <div id="projects-modal" class="brutalist-modal-overlay">
+    <div class="brutalist-modal">
+      <div class="modal-header">
+        <span class="modal-title">📁 PROJECT KNOWLEDGE &amp; CONTEXT</span>
+        <button type="button" class="modal-close" onclick="closeProjectsModal()">✕</button>
+      </div>
+      <div class="modal-content space-y-4">
+        <p class="text-xs text-[#6B6B63] leading-relaxed">
+          Attach project files (.md, .txt) or design specifications. Tungsten AI will persistently inject active project knowledge directly into the Groq API reasoning context.
+        </p>
+
+        <!-- Active Project Status -->
+        <div class="border-2 border-[#111111] bg-[#E4E4DC] p-2.5 flex items-center justify-between shadow-hard-sm">
+          <div>
+            <span class="text-[10px] text-[#6B6B63] font-bold uppercase block">ACTIVE INGESTION CONTEXT:</span>
+            <span id="modal-active-proj-name" class="font-bold text-xs text-[#111111]">NONE (GENERAL MODE)</span>
+          </div>
+          <button
+            type="button"
+            id="btn-detach-project"
+            onclick="detachActiveProject()"
+            class="text-[10px] border border-[#111111] bg-white px-2 py-1 font-bold hover:bg-[#FF3B30] hover:text-white"
+            style="display:none;"
+          >
+            DETACH ✕
+          </button>
+        </div>
+
+        <!-- Project Creator Form -->
+        <div class="border-2 border-[#111111] bg-[#EEEEE6] p-3 shadow-hard-sm space-y-2">
+          <span class="text-xs font-black uppercase text-[#111111] block">CREATE NEW PROJECT WORKSPACE</span>
+          <div class="flex gap-2">
+            <input
+              id="new-project-name-input"
+              type="text"
+              placeholder="e.g. My Next.js SaaS, Rust Engine, API Docs"
+              class="flex-1 border-2 border-[#111111] bg-white px-2.5 py-1 text-xs font-mono text-[#111111] focus:outline-none focus:border-[#FFB800]"
+              onkeydown="if(event.key==='Enter') createProject()"
+            />
+            <button
+              type="button"
+              onclick="createProject()"
+              class="border-2 border-[#111111] bg-[#FFB800] px-3 py-1 text-xs font-black uppercase shadow-hard-sm hover:bg-[#FFA000]"
+            >
+              + ADD
+            </button>
+          </div>
+        </div>
+
+        <!-- Projects & Attached Files List -->
+        <div class="space-y-2">
+          <span class="text-xs font-black uppercase text-[#111111] block">SAVED PROJECTS (<span id="modal-proj-count">0</span>)</span>
+          <div id="projects-list-container" class="space-y-2 max-h-60 overflow-y-auto"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="subbar-btn" onclick="closeProjectsModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Bring Your Own Key (BYOK) Modal -->
+  <div id="byok-modal" class="brutalist-modal-overlay">
+    <div class="brutalist-modal max-w-md">
+      <div class="modal-header">
+        <span class="modal-title">⚙ BYOK SETTINGS</span>
+        <button type="button" class="modal-close" onclick="closeByokModal()">✕</button>
+      </div>
+      <div class="modal-content space-y-3">
+        <p class="text-xs text-[#6B6B63] leading-relaxed">
+          By default, Tungsten runs on our 4-key auto-rotating Groq pool with the Free Test Pass. Add your personal Groq or OpenRouter API key for unlimited personal capacity.
+        </p>
+
+        <div class="space-y-1">
+          <label for="byok-provider-select" class="text-[10px] font-bold uppercase text-[#111111] block">PROVIDER</label>
+          <select id="byok-provider-select" class="w-full border-2 border-[#111111] bg-white p-2 text-xs font-mono">
+            <option value="groq">Groq (Ultra-Low Latency LPUs)</option>
+            <option value="openrouter">OpenRouter (Multi-Model Hub)</option>
+          </select>
+        </div>
+
+        <div class="space-y-1">
+          <label for="byok-key-input" class="text-[10px] font-bold uppercase text-[#111111] block">API KEY</label>
+          <input
+            id="byok-key-input"
+            type="password"
+            placeholder="gsk_... or sk-or-..."
+            class="w-full border-2 border-[#111111] bg-white p-2 text-xs font-mono text-[#111111] focus:outline-none focus:border-[#FFB800]"
+          />
+          <span class="text-[9px] text-[#6B6B63] block">Stored strictly in your local browser localStorage. Never sent to any third party.</span>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" onclick="clearByokKey()" class="text-xs border border-[#111111] bg-white px-2.5 py-1 text-[#FF3B30] font-bold hover:bg-[#FF3B30] hover:text-white">REMOVE KEY</button>
+        <button type="button" onclick="saveByokKey()" class="subbar-btn bg-[#FFB800]">SAVE KEY</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. AI Image Generator Modal -->
+  <div id="image-modal" class="brutalist-modal-overlay">
+    <div class="brutalist-modal max-w-lg">
+      <div class="modal-header">
+        <span class="modal-title">🎨 TUNGSTON EDGE IMAGE FOUNDRY</span>
+        <button type="button" class="modal-close" onclick="closeImageModal()">✕</button>
+      </div>
+      <div class="modal-content space-y-3">
+        <p class="text-xs text-[#6B6B63] leading-relaxed">
+          Generate high-resolution visual art and concept boards powered by our Edge image synthesis engine. Or type <code class="bg-[#E4E4DC] px-1 py-0.5 border">/image &lt;prompt&gt;</code> in chat anytime.
+        </p>
+
+        <div class="space-y-1">
+          <textarea
+            id="image-prompt-input"
+            rows="3"
+            placeholder="Describe your visual concept... (e.g. 'Brutalist industrial tungsten reactor core with glowing filament wires, 8k octane render')"
+            class="w-full border-2 border-[#111111] bg-white p-2.5 text-xs font-mono text-[#111111] focus:outline-none focus:border-[#FFB800]"
+          ></textarea>
+        </div>
+
+        <button
+          id="btn-generate-image-modal"
+          type="button"
+          onclick="handleImageModalSubmit()"
+          class="w-full border-2 border-[#111111] bg-[#FFB800] py-2 text-xs font-black uppercase text-[#111111] shadow-hard-sm hover:bg-[#FFA000] flex items-center justify-center gap-1.5"
+        >
+          <span>🎨</span><span>GENERATE IMAGE</span>
+        </button>
+
+        <!-- Image Result Box -->
+        <div id="image-modal-result" class="border-2 border-[#111111] bg-[#111111] p-3 text-center min-h-[140px] flex items-center justify-center text-xs text-[#A0A096]">
+          No image rendered yet. Enter prompt above.
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="subbar-btn" onclick="closeImageModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. Supabase Authentication Modal -->
+  <div id="auth-modal" class="brutalist-modal-overlay">
+    <div class="brutalist-modal max-w-md">
+      <div class="modal-header">
+        <span class="modal-title">🔑 IDENTITY // SUPABASE</span>
+        <button type="button" class="modal-close" onclick="closeAuthModal()">✕</button>
+      </div>
+
+      <!-- Authenticated View (shown when user is logged in) -->
+      <div id="auth-modal-logged-in" class="modal-content space-y-4" style="display:none;">
+        <div class="border-2 border-[#111111] bg-[#E4E4DC] p-3 shadow-hard-sm">
+          <div class="flex items-center gap-2 mb-1">
+            <span class="auth-dot member"></span>
+            <span class="text-xs font-black uppercase text-[#111111]">MEMBER SESSION ACTIVE</span>
+          </div>
+          <div class="text-xs font-mono font-bold text-[#111111] break-all" id="auth-user-email-display">user@example.com</div>
+          <div class="text-[10px] text-[#6B6B63] mt-1 font-mono">TIER: AUTHENTICATED (ELEVATED LPU RATE LIMITS)</div>
+        </div>
+
+        <p class="text-xs text-[#6B6B63] leading-relaxed">
+          Your credentials are authenticated directly with Supabase. You have unlocked elevated hourly rate limits and priority multi-turn reasoning.
+        </p>
+
+        <button
+          type="button"
+          onclick="handleSignOut()"
+          class="w-full border-2 border-[#111111] bg-white py-2 text-xs font-black uppercase text-[#FF3B30] shadow-hard-sm hover:bg-[#FF3B30] hover:text-white"
+        >
+          SIGN OUT
+        </button>
+      </div>
+
+      <!-- Guest / Login Form View (shown when guest or logged out) -->
+      <div id="auth-modal-logged-out" class="modal-content space-y-4">
+        <!-- Auth Tabs: Sign In vs Sign Up -->
+        <div class="flex border-2 border-[#111111] bg-white p-0.5">
+          <button
+            type="button"
+            id="tab-btn-signin"
+            onclick="setAuthModalTab('signin')"
+            class="flex-1 py-1.5 text-xs font-black uppercase transition-colors bg-[#FFB800] text-[#111111]"
+          >
+            SIGN IN
+          </button>
+          <button
+            type="button"
+            id="tab-btn-signup"
+            onclick="setAuthModalTab('signup')"
+            class="flex-1 py-1.5 text-xs font-black uppercase transition-colors text-[#6B6B63] hover:text-[#111111]"
+          >
+            CREATE ACCOUNT
+          </button>
+        </div>
+
+        <!-- Auth Form -->
+        <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3">
+          <div class="space-y-1">
+            <label for="auth-email" class="text-[10px] font-bold uppercase text-[#111111] block">EMAIL ADDRESS</label>
+            <input
+              id="auth-email"
+              type="email"
+              required
+              placeholder="engineer@domain.com"
+              class="w-full border-2 border-[#111111] bg-white p-2 text-xs font-mono text-[#111111] focus:outline-none focus:border-[#FFB800]"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label for="auth-password" class="text-[10px] font-bold uppercase text-[#111111] block">PASSWORD</label>
+            <input
+              id="auth-password"
+              type="password"
+              required
+              minlength="6"
+              placeholder="••••••••"
+              class="w-full border-2 border-[#111111] bg-white p-2 text-xs font-mono text-[#111111] focus:outline-none focus:border-[#FFB800]"
+            />
+          </div>
+
+          <div id="auth-error-msg" class="border border-[#FF3B30] bg-[#FFECEC] p-2 text-[11px] text-[#FF3B30] font-mono font-bold" style="display:none;"></div>
+
+          <button
+            id="auth-submit-btn"
+            type="submit"
+            class="w-full border-2 border-[#111111] bg-[#FFB800] py-2 text-xs font-black uppercase text-[#111111] shadow-hard-sm hover:bg-[#FFA000] active:translate-x-[1px] active:translate-y-[1px] flex items-center justify-center gap-1.5"
+          >
+            <span id="auth-submit-label">SIGN IN TO FOUNDRY</span>
+          </button>
+        </form>
+
+        <!-- Frictionless Free Test Pass Divider -->
+        <div class="relative flex py-1 items-center">
+          <div class="flex-grow border-t border-[#111111]"></div>
+          <span class="flex-shrink mx-2 text-[10px] font-mono font-bold uppercase text-[#6B6B63]">OR INSTANT TESTING</span>
+          <div class="flex-grow border-t border-[#111111]"></div>
+        </div>
+
+        <button
+          type="button"
+          onclick="activateGuestPass()"
+          class="w-full border-2 border-[#111111] bg-[#E4E4DC] py-2 text-xs font-bold uppercase text-[#111111] shadow-hard-sm hover:bg-[#D4D4CC] flex items-center justify-center gap-1.5 font-mono"
+        >
+          <span>⚡</span>
+          <span>CONTINUE AS GUEST (FREE TEST PASS)</span>
+        </button>
+
+        <p class="text-[10px] text-[#6B6B63] text-center font-mono">
+          No sign-up required. Free Test Pass gives immediate full access to Tungsten AI, Chat Sessions, and HTML App Playground.
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="subbar-btn" onclick="closeAuthModal()">CLOSE</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. Global Toast Notification Layer -->
+  <div id="toast-container" class="toast-container"></div>
 
   <!-- Application Script -->
   <script src="script.js"></script>

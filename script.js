@@ -163,38 +163,507 @@ function initInitialRoute() {
 }
 
 // ============================================================
-// 4. TUNGSTON AI — FLAGSHIP CHAT ENGINE
+// 3.5. SUPABASE AUTHENTICATION & ACCESS TIER ENGINE
+// ============================================================
+const SUPABASE_URL = 'https://vhubdozlyjqpvpqcacdv.supabase.co';
+const SUPABASE_ANON_KEY =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZodWJkb3pseWpxcHZwcWNhY2R2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTE0NTc2MzksImV4cCI6MjEwNzAzMzYzOX0.SJCXi2CLCcyz7NtOl9IVmJBbHVxKoGHa9jES4rThUFM';
+
+let supabaseClient = null;
+let currentAuthSession = null;
+let currentAuthUser = null;
+let authModalTab = 'signin'; // 'signin' | 'signup'
+
+function initSupabaseAuth() {
+  try {
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
+      supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // Restore active session
+      supabaseClient.auth.getSession().then(({ data, error }) => {
+        if (!error && data && data.session) {
+          currentAuthSession = data.session;
+          currentAuthUser = data.session.user;
+        } else {
+          currentAuthSession = null;
+          currentAuthUser = null;
+        }
+        updateAuthUI();
+      }).catch((err) => {
+        console.warn('Supabase getSession fallback:', err);
+        currentAuthSession = null;
+        currentAuthUser = null;
+        updateAuthUI();
+      });
+
+      // Listen for session changes
+      supabaseClient.auth.onAuthStateChange((event, session) => {
+        currentAuthSession = session;
+        currentAuthUser = session ? session.user : null;
+        updateAuthUI();
+        if (event === 'SIGNED_IN') {
+          showToast(`Welcome back, ${session.user.email}!`, 'success');
+          closeAuthModal();
+        } else if (event === 'SIGNED_OUT') {
+          showToast('Signed out. Free Test Pass active.', 'info');
+          closeAuthModal();
+        }
+      });
+    } else {
+      console.warn('Supabase CDN not available. Free Test Pass active.');
+      updateAuthUI();
+    }
+  } catch (err) {
+    console.warn('Supabase initialization error (falling back to Free Test Pass):', err);
+    updateAuthUI();
+  }
+}
+
+function updateAuthUI() {
+  const dotEl = document.getElementById('auth-status-dot');
+  const textEl = document.getElementById('auth-status-text');
+  const loggedInView = document.getElementById('auth-modal-logged-in');
+  const loggedOutView = document.getElementById('auth-modal-logged-out');
+  const userEmailDisplay = document.getElementById('auth-user-email-display');
+
+  if (currentAuthUser && currentAuthUser.email) {
+    if (dotEl) dotEl.className = 'auth-dot member';
+    if (textEl) {
+      const prefix = currentAuthUser.email.split('@')[0];
+      textEl.textContent = `MEMBER [${prefix.slice(0, 8)}]`;
+    }
+    if (loggedInView) loggedInView.style.display = 'block';
+    if (loggedOutView) loggedOutView.style.display = 'none';
+    if (userEmailDisplay) userEmailDisplay.textContent = currentAuthUser.email;
+  } else {
+    if (dotEl) dotEl.className = 'auth-dot guest';
+    if (textEl) textEl.textContent = 'GUEST PASS';
+    if (loggedInView) loggedInView.style.display = 'none';
+    if (loggedOutView) loggedOutView.style.display = 'block';
+  }
+}
+
+function openAuthModal() {
+  playMechanicalClick(600);
+  const modal = document.getElementById('auth-modal');
+  if (modal) {
+    modal.classList.add('open');
+    updateAuthUI();
+    clearAuthError();
+  }
+}
+
+function closeAuthModal() {
+  playMechanicalClick(500);
+  const modal = document.getElementById('auth-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+function setAuthModalTab(tab) {
+  playMechanicalClick(700);
+  authModalTab = tab;
+  clearAuthError();
+  const btnSignin = document.getElementById('tab-btn-signin');
+  const btnSignup = document.getElementById('tab-btn-signup');
+  const submitLabel = document.getElementById('auth-submit-label');
+
+  if (tab === 'signin') {
+    if (btnSignin) {
+      btnSignin.className = 'flex-1 py-1.5 text-xs font-black uppercase transition-colors bg-[#FFB800] text-[#111111]';
+    }
+    if (btnSignup) {
+      btnSignup.className = 'flex-1 py-1.5 text-xs font-black uppercase transition-colors text-[#6B6B63] hover:text-[#111111]';
+    }
+    if (submitLabel) submitLabel.textContent = 'SIGN IN TO FOUNDRY';
+  } else {
+    if (btnSignin) {
+      btnSignin.className = 'flex-1 py-1.5 text-xs font-black uppercase transition-colors text-[#6B6B63] hover:text-[#111111]';
+    }
+    if (btnSignup) {
+      btnSignup.className = 'flex-1 py-1.5 text-xs font-black uppercase transition-colors bg-[#FFB800] text-[#111111]';
+    }
+    if (submitLabel) submitLabel.textContent = 'CREATE MEMBER ACCOUNT';
+  }
+}
+
+function showAuthError(msg) {
+  const errBox = document.getElementById('auth-error-msg');
+  if (errBox) {
+    errBox.textContent = `[AUTH ERROR]: ${msg}`;
+    errBox.style.display = 'block';
+  }
+}
+
+function clearAuthError() {
+  const errBox = document.getElementById('auth-error-msg');
+  if (errBox) {
+    errBox.textContent = '';
+    errBox.style.display = 'none';
+  }
+}
+
+async function handleAuthSubmit(e) {
+  if (e) e.preventDefault();
+  clearAuthError();
+
+  const emailEl = document.getElementById('auth-email');
+  const passEl = document.getElementById('auth-password');
+  const submitBtn = document.getElementById('auth-submit-btn');
+
+  if (!emailEl || !passEl) return;
+  const email = emailEl.value.trim();
+  const password = passEl.value;
+
+  if (!email || !password) {
+    showAuthError('Email and password are required.');
+    return;
+  }
+
+  if (!supabaseClient) {
+    showAuthError('Supabase connection unavailable. Click "CONTINUE AS GUEST" to test immediately.');
+    return;
+  }
+
+  if (submitBtn) {
+    submitBtn.disabled = true;
+    submitBtn.style.opacity = '0.7';
+  }
+
+  try {
+    if (authModalTab === 'signin') {
+      const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      currentAuthSession = data.session;
+      currentAuthUser = data.user;
+      updateAuthUI();
+      closeAuthModal();
+      showToast(`Welcome back, ${email}`, 'success');
+      playMechanicalClick(880);
+    } else {
+      const { data, error } = await supabaseClient.auth.signUp({ email, password });
+      if (error) throw error;
+      if (data.session) {
+        currentAuthSession = data.session;
+        currentAuthUser = data.user;
+        updateAuthUI();
+        closeAuthModal();
+        showToast('Account created & logged in!', 'success');
+      } else {
+        showToast('Registration submitted! Sign-in or continue as Guest.', 'info');
+        setAuthModalTab('signin');
+      }
+      playMechanicalClick(880);
+    }
+  } catch (err) {
+    console.error('Auth error:', err);
+    showAuthError(err.message || 'Authentication failed. Please verify credentials or continue as Guest.');
+  } finally {
+    if (submitBtn) {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '1';
+    }
+  }
+}
+
+async function handleSignOut() {
+  playMechanicalClick(450);
+  if (supabaseClient) {
+    try {
+      await supabaseClient.auth.signOut();
+    } catch (_) {}
+  }
+  currentAuthSession = null;
+  currentAuthUser = null;
+  updateAuthUI();
+  closeAuthModal();
+  showToast('Signed out. Active Free Test Pass enabled.', 'info');
+}
+
+function activateGuestPass() {
+  playMechanicalClick(650);
+  currentAuthSession = null;
+  currentAuthUser = null;
+  updateAuthUI();
+  closeAuthModal();
+  showToast('Free Test Pass Active. Direct access to all tools enabled.', 'success');
+}
+
+// Close modals when clicking backdrop
+window.addEventListener('click', (e) => {
+  const authModal = document.getElementById('auth-modal');
+  if (authModal && e.target === authModal) {
+    closeAuthModal();
+  }
+  const byokModal = document.getElementById('byok-modal');
+  if (byokModal && e.target === byokModal) {
+    closeByokModal();
+  }
+  const imageModal = document.getElementById('image-modal');
+  if (imageModal && e.target === imageModal) {
+    closeImageModal();
+  }
+  const projModal = document.getElementById('projects-modal');
+  if (projModal && e.target === projModal) {
+    closeProjectsModal();
+  }
+});
+
+// ============================================================
+// 4. TUNGSTON AI — EXPANDED FLAGSHIP ENGINE
+// Multi-threaded sessions, Project Knowledge Ingestion, Context Gauge, BYOK, & Image Generation
 // ============================================================
 const CHAT_API_ENDPOINT = 'https://tungston-ai.vercel.app/api/chat';
+const IMAGE_API_ENDPOINT = 'https://tungston-ai.vercel.app/api/image';
 
-let chatMessages = [];
+const CONVERSATIONS_KEY = 'tungsten_ai_conversations_v2';
+const PROJECTS_KEY = 'tungston:projects';
+const ACTIVE_PROJ_KEY = 'tungston:active_project';
+const BYOK_KEY = 'tungsten_byok_key';
+const BYOK_PROVIDER_KEY = 'tungsten_byok_provider';
+
+let conversations = [];
+let activeConversationId = null;
 let isChatStreaming = false;
 let chatAbortController = null;
 let currentChatModel = 'qwen-2.5-72b';
 
-// Load existing chat history from localStorage
+// Projects State
+let projects = [];
+let activeProjectId = null;
+
+// Initialize State from localStorage
 try {
-  const saved = localStorage.getItem('tungsten_ai_chat_v1');
-  if (saved) chatMessages = JSON.parse(saved);
-} catch (e) {
-  chatMessages = [];
+  const savedConvos = localStorage.getItem(CONVERSATIONS_KEY);
+  if (savedConvos) conversations = JSON.parse(savedConvos);
+} catch (e) { conversations = []; }
+
+try {
+  const savedProjects = localStorage.getItem(PROJECTS_KEY);
+  if (savedProjects) projects = JSON.parse(savedProjects);
+  activeProjectId = localStorage.getItem(ACTIVE_PROJ_KEY) || null;
+} catch (e) { projects = []; activeProjectId = null; }
+
+if (conversations.length === 0) {
+  const initialId = 'convo-' + Date.now();
+  conversations.push({
+    id: initialId,
+    title: 'Initial Session',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    messages: []
+  });
+  activeConversationId = initialId;
+} else {
+  activeConversationId = conversations[0].id;
 }
 
+function getActiveConversation() {
+  return conversations.find((c) => c.id === activeConversationId) || conversations[0];
+}
+
+function saveConversations() {
+  try {
+    localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations.slice(0, 30)));
+  } catch (_) {}
+  renderThreadsList();
+  updateSidebarBadge();
+}
+
+function saveProjects() {
+  try {
+    localStorage.setItem(PROJECTS_KEY, JSON.stringify(projects));
+    if (activeProjectId) localStorage.setItem(ACTIVE_PROJ_KEY, activeProjectId);
+    else localStorage.removeItem(ACTIVE_PROJ_KEY);
+  } catch (_) {}
+  updateActiveProjectBadge();
+  renderProjectsModal();
+  updateContextGauge();
+}
+
+// Model Switching
 function setChatModel(modelKey) {
   currentChatModel = modelKey;
   document.querySelectorAll('.model-opt').forEach((btn) => {
     btn.classList.toggle('active', btn.dataset.model === modelKey);
   });
   playMechanicalClick(650);
+  showToast(`Active Model: ${modelKey.toUpperCase()}`);
 }
 
+// Sidebar Toggle
+function toggleChatSidebar() {
+  const sidebar = document.getElementById('chat-sidebar');
+  const backdrop = document.getElementById('sidebar-backdrop');
+  if (!sidebar) return;
+
+  playMechanicalClick(520);
+  if (window.innerWidth < 768) {
+    sidebar.classList.toggle('open');
+    if (backdrop) backdrop.classList.toggle('active', sidebar.classList.contains('open'));
+  } else {
+    sidebar.classList.toggle('closed');
+  }
+}
+
+function updateSidebarBadge() {
+  const badge = document.getElementById('sidebar-thread-badge');
+  if (badge) badge.innerText = conversations.length;
+}
+
+function renderThreadsList(filterQuery = '') {
+  const container = document.getElementById('chat-threads-container');
+  if (!container) return;
+
+  const q = filterQuery.toLowerCase().trim();
+  const list = q ? conversations.filter((c) => c.title.toLowerCase().includes(q)) : conversations;
+
+  container.innerHTML = '';
+  if (list.length === 0) {
+    container.innerHTML = '<div class="text-[10px] text-[#6B6B63] italic p-3 text-center">No matching sessions.</div>';
+    return;
+  }
+
+  list.forEach((convo) => {
+    const item = document.createElement('div');
+    const isActive = convo.id === activeConversationId;
+    item.className = `thread-item ${isActive ? 'active' : ''}`;
+    item.onclick = () => switchConversation(convo.id);
+
+    item.innerHTML = `
+      <span class="thread-title font-mono">${escapeHtml(convo.title || 'Untitled Session')}</span>
+      <button
+        type="button"
+        class="thread-del-btn"
+        title="Delete session"
+        onclick="event.stopPropagation(); deleteConversation('${convo.id}')"
+      >
+        ×
+      </button>
+    `;
+    container.appendChild(item);
+  });
+}
+
+function filterChatThreads(q) {
+  renderThreadsList(q);
+}
+
+function switchConversation(id) {
+  if (activeConversationId === id) return;
+  activeConversationId = id;
+  playMechanicalClick(580);
+  renderThreadsList();
+  renderChatUI();
+  updateContextGauge();
+
+  // Close mobile sidebar on select
+  if (window.innerWidth < 768) {
+    const sidebar = document.getElementById('chat-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) sidebar.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('active');
+  }
+}
+
+function newChat() {
+  if (isChatStreaming) stopChatGeneration();
+
+  const newId = 'convo-' + Date.now();
+  const newConvo = {
+    id: newId,
+    title: 'New Session ' + (conversations.length + 1),
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    messages: []
+  };
+
+  conversations.unshift(newConvo);
+  activeConversationId = newId;
+  saveConversations();
+  renderChatUI();
+  updateContextGauge();
+  playMechanicalClick(440);
+  showToast('New chat session started');
+
+  if (window.innerWidth < 768) {
+    const sidebar = document.getElementById('chat-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) sidebar.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('active');
+  }
+
+  const input = document.getElementById('chat-input');
+  if (input) input.focus();
+}
+
+function deleteConversation(id) {
+  if (conversations.length <= 1) {
+    // Reset to one blank session
+    conversations[0].messages = [];
+    conversations[0].title = 'Initial Session';
+    saveConversations();
+    renderChatUI();
+    updateContextGauge();
+    return;
+  }
+
+  conversations = conversations.filter((c) => c.id !== id);
+  if (activeConversationId === id) {
+    activeConversationId = conversations[0].id;
+  }
+  saveConversations();
+  renderChatUI();
+  updateContextGauge();
+  playMechanicalClick(300);
+}
+
+function clearAllChats() {
+  if (!confirm('Are you sure you want to clear all chat sessions?')) return;
+  conversations = [{
+    id: 'convo-' + Date.now(),
+    title: 'Initial Session',
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    messages: []
+  }];
+  activeConversationId = conversations[0].id;
+  saveConversations();
+  renderChatUI();
+  updateContextGauge();
+  showToast('All chat sessions cleared');
+}
+
+function exportAllChats() {
+  let md = '# TUNGSTON AI — COMPLETE ARCHIVE EXPORT\n\n';
+  md += `Exported: ${new Date().toISOString()}\nTotal Sessions: ${conversations.length}\n\n---\n\n`;
+
+  conversations.forEach((c) => {
+    md += `## SESSION: ${c.title} (${new Date(c.createdAt).toLocaleString()})\n\n`;
+    c.messages.forEach((m) => {
+      md += `### ${m.role === 'user' ? 'USER' : 'TUNGSTON AI'}\n\n${m.content}\n\n`;
+    });
+    md += `---\n\n`;
+  });
+
+  const blob = new Blob([md], { type: 'text/markdown;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `tungsten-archive-${Date.now()}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Render Messages for Active Conversation
 function renderChatUI() {
-  const scrollContainer = document.getElementById('chat-scroll');
   const welcomeHero = document.getElementById('chat-welcome');
   const messageList = document.getElementById('chat-message-list');
   if (!messageList) return;
 
-  if (chatMessages.length === 0) {
+  const convo = getActiveConversation();
+  const msgs = convo.messages || [];
+
+  if (msgs.length === 0) {
     if (welcomeHero) welcomeHero.style.display = 'block';
     messageList.innerHTML = '';
     return;
@@ -203,7 +672,7 @@ function renderChatUI() {
   if (welcomeHero) welcomeHero.style.display = 'none';
   messageList.innerHTML = '';
 
-  chatMessages.forEach((msg, idx) => {
+  msgs.forEach((msg, idx) => {
     const isUser = msg.role === 'user';
     const row = document.createElement('div');
     row.className = `msg-item ${isUser ? 'msg-item--user' : 'msg-item--assistant'}`;
@@ -216,6 +685,24 @@ function renderChatUI() {
             <span>${msg.time || ''}</span>
           </div>
           <div class="msg-body whitespace-pre-wrap">${escapeHtml(msg.content)}</div>
+        </div>
+      `;
+    } else if (msg.isImage) {
+      row.innerHTML = `
+        <div class="msg-bubble-assistant">
+          <div class="msg-header">
+            <span class="msg-tag-assistant"><span class="dot"></span>W-74 // EDGE IMAGE SYNTHESIS</span>
+            <span>FLUX / SDXL</span>
+          </div>
+          <div class="msg-body">
+            <div class="image-result-card">
+              <img src="${msg.imageUrl}" alt="${escapeHtml(msg.prompt || 'Generated Image')}" class="image-result-img" onclick="openImageLightbox('${msg.imageUrl}')" />
+              <div class="image-result-meta">
+                <span class="truncate mr-2 font-mono">${escapeHtml(msg.prompt || 'Visual Render')}</span>
+                <a href="${msg.imageUrl}" download="tungsten-render-${Date.now()}.png" target="_blank" class="border border-[#FFB800] px-2 py-0.5 text-[#111] bg-[#FFB800] text-[10px] font-black">⬇ SAVE</a>
+              </div>
+            </div>
+          </div>
         </div>
       `;
     } else {
@@ -235,6 +722,460 @@ function renderChatUI() {
 
   decorateCodeBlocks(messageList);
   scrollChatBottom();
+}
+
+// Live Context Gauge Calculation
+function updateContextGauge() {
+  const convo = getActiveConversation();
+  const msgs = convo.messages || [];
+
+  let totalChars = 1200; // base system prompt
+  msgs.forEach((m) => {
+    totalChars += (m.content || '').length;
+  });
+
+  // Add active project files size if active
+  const activeProj = projects.find((p) => p.id === activeProjectId);
+  if (activeProj) {
+    activeProj.files.forEach((f) => {
+      totalChars += (f.content || '').length;
+    });
+  }
+
+  const estimatedTokens = Math.round(totalChars / 3.8);
+  const maxTokens = 128000;
+  const pct = Math.min(100, Math.max(1, Math.round((estimatedTokens / maxTokens) * 100)));
+
+  const fillEl = document.getElementById('context-gauge-fill');
+  const labelEl = document.getElementById('context-gauge-label');
+
+  if (fillEl) fillEl.style.width = pct + '%';
+  if (labelEl) {
+    const formattedTokens = estimatedTokens >= 1000 ? `${(estimatedTokens / 1000).toFixed(1)}K` : estimatedTokens;
+    labelEl.innerText = `${formattedTokens} / 128K`;
+  }
+}
+
+// Toast System
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toast-container');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast-item';
+  toast.innerText = msg;
+  container.appendChild(toast);
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transition = 'opacity 0.2s';
+    setTimeout(() => toast.remove(), 250);
+  }, 2800);
+}
+
+function insertComposerText(snippet) {
+  const input = document.getElementById('chat-input');
+  if (!input) return;
+  input.value = input.value ? `${input.value} ${snippet}` : snippet;
+  input.focus();
+  playMechanicalClick(600);
+}
+
+// ============================================================
+// PROJECTS & KNOWLEDGE CONTEXT MANAGEMENT
+// ============================================================
+function openProjectsModal() {
+  playMechanicalClick(600);
+  const modal = document.getElementById('projects-modal');
+  if (modal) modal.classList.add('open');
+  renderProjectsModal();
+}
+
+function closeProjectsModal() {
+  const modal = document.getElementById('projects-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+function updateActiveProjectBadge() {
+  const label = document.getElementById('active-project-label');
+  const activeProj = projects.find((p) => p.id === activeProjectId);
+
+  if (label) {
+    if (activeProj) {
+      label.innerText = `CONTEXT: ${activeProj.name.toUpperCase().slice(0, 10)}`;
+      label.classList.add('text-[#FFB800]');
+    } else {
+      label.innerText = 'PROJECTS';
+      label.classList.remove('text-[#FFB800]');
+    }
+  }
+}
+
+function renderProjectsModal() {
+  const countEl = document.getElementById('modal-proj-count');
+  const activeNameEl = document.getElementById('modal-active-proj-name');
+  const detachBtn = document.getElementById('btn-detach-project');
+  const listContainer = document.getElementById('projects-list-container');
+
+  if (countEl) countEl.innerText = projects.length;
+
+  const activeProj = projects.find((p) => p.id === activeProjectId);
+  if (activeNameEl) {
+    activeNameEl.innerText = activeProj ? `${activeProj.name.toUpperCase()} (${activeProj.files.length} FILES)` : 'NONE (GENERAL MODE)';
+  }
+  if (detachBtn) {
+    detachBtn.style.display = activeProj ? 'inline-block' : 'none';
+  }
+
+  if (!listContainer) return;
+  if (projects.length === 0) {
+    listContainer.innerHTML = '<div class="text-[11px] text-[#6B6B63] italic p-3 text-center border-2 border-dashed border-[#111111]">No projects created yet. Add one above.</div>';
+    return;
+  }
+
+  listContainer.innerHTML = '';
+  projects.forEach((proj) => {
+    const isCurrentActive = proj.id === activeProjectId;
+    const card = document.createElement('div');
+    card.className = `border-2 border-[#111111] p-2.5 bg-[#EEEEE6] shadow-hard-sm space-y-2 ${isCurrentActive ? 'border-l-4 border-l-[#FFB800]' : ''}`;
+
+    let filesHtml = '';
+    if (proj.files.length === 0) {
+      filesHtml = '<span class="text-[10px] text-[#6B6B63] italic">No files attached yet.</span>';
+    } else {
+      filesHtml = proj.files.map((f, fIdx) => `
+        <div class="flex items-center justify-between bg-white border border-[#111111] px-2 py-1 text-[10px] font-mono">
+          <span class="truncate mr-2 font-bold">${escapeHtml(f.name)} (${(f.sizeBytes / 1024).toFixed(1)} KB)</span>
+          <button type="button" onclick="removeProjectFile('${proj.id}', ${fIdx})" class="text-[#FF3B30] font-bold hover:text-[#111]">✕</button>
+        </div>
+      `).join('');
+    }
+
+    card.innerHTML = `
+      <div class="flex items-center justify-between border-b border-[#D8D8CF] pb-1">
+        <div class="flex items-center gap-1.5">
+          <span class="font-black text-xs text-[#111111]">${escapeHtml(proj.name)}</span>
+          ${isCurrentActive ? '<span class="bg-[#111111] text-[#FFB800] text-[9px] font-bold px-1 py-0.2">ACTIVE</span>' : ''}
+        </div>
+        <div class="flex items-center gap-1">
+          <button
+            type="button"
+            onclick="selectProject('${proj.id}')"
+            class="text-[10px] border border-[#111111] px-2 py-0.5 font-bold ${isCurrentActive ? 'bg-[#FFB800] text-[#111]' : 'bg-white hover:bg-[#FFB800]'}"
+          >
+            ${isCurrentActive ? '✓ ENGAGED' : 'ENGAGE CONTEXT'}
+          </button>
+          <button
+            type="button"
+            onclick="deleteProject('${proj.id}')"
+            class="text-[10px] border border-[#111111] bg-white text-[#FF3B30] px-1.5 py-0.5 font-bold hover:bg-[#FF3B30] hover:text-white"
+          >
+            🗑️
+          </button>
+        </div>
+      </div>
+
+      <div class="space-y-1">
+        <div class="text-[10px] font-bold text-[#6B6B63] uppercase">Attached Knowledge Files:</div>
+        <div class="space-y-1">${filesHtml}</div>
+      </div>
+
+      <div class="pt-1 flex gap-1">
+        <input
+          type="file"
+          id="file-upload-${proj.id}"
+          accept=".md,.txt"
+          multiple
+          class="hidden"
+          onchange="handleProjectFileUpload('${proj.id}', this)"
+        />
+        <button
+          type="button"
+          onclick="document.getElementById('file-upload-${proj.id}').click()"
+          class="text-[10px] border border-[#111111] bg-white px-2 py-0.5 font-bold hover:bg-[#FFB800] flex items-center gap-1"
+        >
+          <span>+ UPLOAD FILE (.md, .txt)</span>
+        </button>
+        <button
+          type="button"
+          onclick="promptAddProjectText('${proj.id}')"
+          class="text-[10px] border border-[#111111] bg-white px-2 py-0.5 font-bold hover:bg-[#FFB800] flex items-center gap-1"
+        >
+          <span>+ PASTE TEXT</span>
+        </button>
+      </div>
+    `;
+    listContainer.appendChild(card);
+  });
+}
+
+function createProject() {
+  const inp = document.getElementById('new-project-name-input');
+  if (!inp) return;
+  const name = inp.value.trim();
+  if (!name) return;
+
+  const newProj = {
+    id: 'proj-' + Date.now(),
+    name: name,
+    files: [],
+    createdAt: Date.now()
+  };
+
+  projects.unshift(newProj);
+  inp.value = '';
+  saveProjects();
+  showToast(`Project created: ${name}`);
+  playMechanicalClick(650);
+}
+
+function deleteProject(id) {
+  if (!confirm('Are you sure you want to delete this project?')) return;
+  projects = projects.filter((p) => p.id !== id);
+  if (activeProjectId === id) activeProjectId = null;
+  saveProjects();
+  showToast('Project deleted');
+  playMechanicalClick(300);
+}
+
+function selectProject(id) {
+  activeProjectId = id;
+  saveProjects();
+  const p = projects.find((proj) => proj.id === id);
+  showToast(`Context engaged: ${p ? p.name : 'None'}`);
+  playMechanicalClick(750);
+}
+
+function detachActiveProject() {
+  activeProjectId = null;
+  saveProjects();
+  showToast('Project context detached');
+  playMechanicalClick(400);
+}
+
+function handleProjectFileUpload(projId, inputEl) {
+  const files = inputEl.files;
+  if (!files || !files.length) return;
+
+  const proj = projects.find((p) => p.id === projId);
+  if (!proj) return;
+
+  Array.from(files).forEach((file) => {
+    if (file.size > 50 * 1024) {
+      alert(`File "${file.name}" exceeds the 50KB safety limit.`);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      proj.files.push({
+        name: file.name,
+        content: e.target.result,
+        sizeBytes: file.size
+      });
+      saveProjects();
+      showToast(`Uploaded: ${file.name}`);
+    };
+    reader.readAsText(file);
+  });
+  inputEl.value = '';
+}
+
+function promptAddProjectText(projId) {
+  const title = prompt('Enter document title (e.g. "Architecture Spec"):');
+  if (!title) return;
+  const content = prompt('Paste your document text/markdown content:');
+  if (!content) return;
+
+  const proj = projects.find((p) => p.id === projId);
+  if (!proj) return;
+
+  proj.files.push({
+    name: title.endsWith('.md') ? title : `${title}.md`,
+    content: content,
+    sizeBytes: new TextEncoder().encode(content).length
+  });
+  saveProjects();
+  showToast(`Attached snippet: ${title}`);
+}
+
+function removeProjectFile(projId, fileIdx) {
+  const proj = projects.find((p) => p.id === projId);
+  if (!proj) return;
+  proj.files.splice(fileIdx, 1);
+  saveProjects();
+  showToast('File removed');
+}
+
+// ============================================================
+// BRING YOUR OWN KEY (BYOK)
+// ============================================================
+function openByokModal() {
+  playMechanicalClick(600);
+  const modal = document.getElementById('byok-modal');
+  const keyInput = document.getElementById('byok-key-input');
+  const providerSelect = document.getElementById('byok-provider-select');
+
+  const savedKey = localStorage.getItem(BYOK_KEY) || '';
+  const savedProvider = localStorage.getItem(BYOK_PROVIDER_KEY) || 'groq';
+
+  if (keyInput) keyInput.value = savedKey;
+  if (providerSelect) providerSelect.value = savedProvider;
+  if (modal) modal.classList.add('open');
+}
+
+function closeByokModal() {
+  const modal = document.getElementById('byok-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+function saveByokKey() {
+  const keyInput = document.getElementById('byok-key-input');
+  const providerSelect = document.getElementById('byok-provider-select');
+  const key = keyInput ? keyInput.value.trim() : '';
+  const provider = providerSelect ? providerSelect.value : 'groq';
+
+  if (!key) {
+    clearByokKey();
+    return;
+  }
+
+  localStorage.setItem(BYOK_KEY, key);
+  localStorage.setItem(BYOK_PROVIDER_KEY, provider);
+  closeByokModal();
+  updateByokStatusBadge();
+  showToast('BYOK API Key saved securely');
+  playMechanicalClick(750);
+}
+
+function clearByokKey() {
+  localStorage.removeItem(BYOK_KEY);
+  localStorage.removeItem(BYOK_PROVIDER_KEY);
+  closeByokModal();
+  updateByokStatusBadge();
+  showToast('BYOK Key removed. Reverted to Free Test Pass.');
+  playMechanicalClick(400);
+}
+
+function updateByokStatusBadge() {
+  const label = document.getElementById('byok-status-label');
+  const meta = document.getElementById('composer-status-meta');
+  const savedKey = localStorage.getItem(BYOK_KEY);
+
+  if (label) {
+    if (savedKey) {
+      label.innerText = 'BYOK: ON ✓';
+      label.classList.add('text-[#FFB800]');
+    } else {
+      label.innerText = 'BYOK';
+      label.classList.remove('text-[#FFB800]');
+    }
+  }
+
+  if (meta) {
+    if (savedKey) {
+      meta.innerText = 'PERSONAL BYOK KEY ACTIVE • UNLIMITED CAPACITY';
+    } else {
+      meta.innerText = 'GROQ LPU CLUSTER • 4-KEY AUTO-ROTATING POOL • FREE TEST PASS';
+    }
+  }
+}
+
+// ============================================================
+// IMAGE GENERATION (EDGE SYNTHESIS)
+// ============================================================
+function openImageModal() {
+  playMechanicalClick(600);
+  const modal = document.getElementById('image-modal');
+  if (modal) modal.classList.add('open');
+  const input = document.getElementById('image-prompt-input');
+  if (input) input.focus();
+}
+
+function closeImageModal() {
+  const modal = document.getElementById('image-modal');
+  if (modal) modal.classList.remove('open');
+}
+
+async function handleImageModalSubmit() {
+  const input = document.getElementById('image-prompt-input');
+  const resultBox = document.getElementById('image-modal-result');
+  const btn = document.getElementById('btn-generate-image-modal');
+  const prompt = input ? input.value.trim() : '';
+
+  if (!prompt) {
+    alert('Please enter an image prompt description.');
+    return;
+  }
+
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<span class="inline-block animate-spin mr-2">⚙</span>SYNTHESIZING PIXELS...';
+  }
+  if (resultBox) {
+    resultBox.innerHTML = '<div class="text-center font-mono py-6"><span class="inline-block animate-spin mr-2 text-[#FFB800]">⚙</span>RENDERING VIA EDGE IMAGE MODEL...</div>';
+  }
+
+  try {
+    const res = await fetch(IMAGE_API_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt })
+    });
+
+    if (!res.ok) {
+      const errJson = await res.json().catch(() => ({}));
+      throw new Error(errJson.error || `Image error (${res.status})`);
+    }
+
+    const data = await res.json();
+    const imgUrl = (data.images && data.images[0]) || '';
+    if (!imgUrl) throw new Error('No image returned from engine.');
+
+    if (resultBox) {
+      resultBox.innerHTML = `
+        <div class="space-y-2 w-full">
+          <img src="${imgUrl}" alt="${escapeHtml(prompt)}" class="max-h-[300px] mx-auto border-2 border-[#111111]" />
+          <div class="flex justify-between items-center text-xs pt-1">
+            <span class="truncate max-w-[280px] font-mono">${escapeHtml(prompt)}</span>
+            <a href="${imgUrl}" download="tungsten-render-${Date.now()}.png" target="_blank" class="border-2 border-[#FFB800] bg-[#FFB800] text-[#111] px-2.5 py-1 text-[10px] font-black uppercase">⬇ DOWNLOAD</a>
+          </div>
+        </div>
+      `;
+    }
+
+    // Also add to active conversation as an image message
+    const convo = getActiveConversation();
+    convo.messages.push({
+      role: 'user',
+      content: `/image ${prompt}`,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+    convo.messages.push({
+      role: 'assistant',
+      isImage: true,
+      imageUrl: imgUrl,
+      prompt: prompt,
+      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    });
+    saveConversations();
+    renderChatUI();
+    showToast('Image rendered successfully');
+  } catch (err) {
+    if (resultBox) {
+      resultBox.innerHTML = `<div class="text-[#FF3B30] font-mono p-4">Error: ${escapeHtml(err.message || String(err))}</div>`;
+    }
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<span>🎨</span><span>GENERATE IMAGE</span>';
+    }
+  }
+}
+
+// Lightbox for full-size viewing
+function openImageLightbox(url) {
+  const win = window.open(url, '_blank');
+  if (win) win.focus();
 }
 
 function renderMarkdown(rawText) {
@@ -327,19 +1268,40 @@ async function handleChatSubmit(e) {
   textarea.value = '';
   textarea.style.height = 'auto';
 
+  // 1. Check for /image command
+  if (prompt.startsWith('/image')) {
+    const imgPrompt = prompt.replace(/^\/image\s*/, '').trim();
+    if (!imgPrompt) {
+      alert('Please provide an image prompt after /image (e.g. /image glowing reactor core)');
+      return;
+    }
+    const imgInput = document.getElementById('image-prompt-input');
+    if (imgInput) imgInput.value = imgPrompt;
+    openImageModal();
+    handleImageModalSubmit();
+    return;
+  }
+
   const now = new Date();
   const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
-  // 1. Add user message
-  chatMessages.push({
+  const convo = getActiveConversation();
+
+  // If this is the first message in the session, update thread title
+  if (convo.messages.length === 0) {
+    convo.title = prompt.slice(0, 32) + (prompt.length > 32 ? '...' : '');
+  }
+
+  // Add user message
+  convo.messages.push({
     role: 'user',
     content: prompt,
     time: timeStr
   });
 
-  // 2. Add assistant placeholder
-  const assistantIdx = chatMessages.length;
-  chatMessages.push({
+  // Add assistant placeholder
+  const assistantIdx = convo.messages.length;
+  convo.messages.push({
     role: 'assistant',
     content: '',
     model: currentChatModel.toUpperCase(),
@@ -347,6 +1309,7 @@ async function handleChatSubmit(e) {
   });
 
   renderChatUI();
+  updateContextGauge();
   scrollChatBottom();
 
   isChatStreaming = true;
@@ -361,19 +1324,43 @@ async function handleChatSubmit(e) {
   let accumulatedResponse = '';
 
   try {
+    // Check for Active Project Knowledge Context
+    let projectContext = null;
+    const activeProj = projects.find((p) => p.id === activeProjectId);
+    if (activeProj && activeProj.files && activeProj.files.length > 0) {
+      projectContext = `=== ATTACHED PROJECT KNOWLEDGE: [${activeProj.name}] ===\n`;
+      activeProj.files.forEach((f) => {
+        projectContext += `\n--- FILE: ${f.name} ---\n${f.content}\n`;
+      });
+      projectContext += `\n=========================================\nTreat the above project documentation and files as persistent ground truth for this project.`;
+    }
+
     const payload = {
-      messages: chatMessages.slice(0, -1).map((m) => ({
+      messages: convo.messages.slice(0, -1).map((m) => ({
         role: m.role,
         content: m.content
       })),
-      modelOverride: currentChatModel
+      modelOverride: currentChatModel,
+      projectContext: projectContext
     };
+
+    // Prepare Request Headers (including Auth & BYOK if set)
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+    if (currentAuthSession && currentAuthSession.access_token) {
+      headers['Authorization'] = `Bearer ${currentAuthSession.access_token}`;
+    }
+    const byokKey = localStorage.getItem(BYOK_KEY);
+    const byokProvider = localStorage.getItem(BYOK_PROVIDER_KEY) || 'groq';
+    if (byokKey) {
+      headers['x-byok-key'] = byokKey;
+      headers['x-byok-provider'] = byokProvider;
+    }
 
     const res = await fetch(CHAT_API_ENDPOINT, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: headers,
       body: JSON.stringify(payload),
       signal: chatAbortController.signal
     });
@@ -396,7 +1383,7 @@ async function handleChatSubmit(e) {
 
       const chunk = decoder.decode(value, { stream: true });
       accumulatedResponse += chunk;
-      chatMessages[assistantIdx].content = accumulatedResponse;
+      convo.messages[assistantIdx].content = accumulatedResponse;
 
       if (assistantBody) {
         assistantBody.innerHTML = renderMarkdown(accumulatedResponse) + '<span class="cursor-blink"></span>';
@@ -411,21 +1398,22 @@ async function handleChatSubmit(e) {
       decorateCodeBlocks(assistantBody);
     }
 
-    // Save to localStorage
-    try {
-      localStorage.setItem('tungsten_ai_chat_v1', JSON.stringify(chatMessages.slice(-24)));
-    } catch (_) {}
+    convo.updatedAt = Date.now();
+    saveConversations();
+    updateContextGauge();
   } catch (err) {
     if (err.name === 'AbortError') {
       accumulatedResponse += '\n\n*[Generation stopped by user]*';
     } else {
       accumulatedResponse += `\n\n**[TRANSMISSION ERROR]**: ${err.message || String(err)}`;
     }
-    chatMessages[assistantIdx].content = accumulatedResponse;
+    convo.messages[assistantIdx].content = accumulatedResponse;
     if (assistantBody) {
       assistantBody.innerHTML = renderMarkdown(accumulatedResponse);
       decorateCodeBlocks(assistantBody);
     }
+    saveConversations();
+    updateContextGauge();
   } finally {
     isChatStreaming = false;
     chatAbortController = null;
@@ -447,24 +1435,16 @@ function toggleChatControls(streaming) {
   if (stopBtn) stopBtn.style.display = streaming ? 'inline-flex' : 'none';
 }
 
-function newChat() {
-  if (isChatStreaming) stopChatGeneration();
-  chatMessages = [];
-  try {
-    localStorage.removeItem('tungsten_ai_chat_v1');
-  } catch (_) {}
-  renderChatUI();
-  playMechanicalClick(440);
-}
-
 function exportChat() {
-  if (chatMessages.length === 0) {
-    alert('No messages to export.');
+  const convo = getActiveConversation();
+  const msgs = convo.messages || [];
+  if (msgs.length === 0) {
+    alert('No messages in this session to export.');
     return;
   }
-  let md = '# TUNGSTON AI — CONVERSATION EXPORT\n\n';
-  md += `Exported: ${new Date().toISOString()}\n\n---\n\n`;
-  chatMessages.forEach((m) => {
+  let md = `# TUNGSTON AI — SESSION: ${convo.title}\n\n`;
+  md += `Exported: ${new Date().toISOString()}\nModel: ${currentChatModel}\n\n---\n\n`;
+  msgs.forEach((m) => {
     md += `### ${m.role === 'user' ? 'USER' : 'TUNGSTON AI (' + (m.model || 'GROQ') + ')'}\n\n`;
     md += `${m.content}\n\n---\n\n`;
   });
@@ -473,9 +1453,10 @@ function exportChat() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  a.download = `tungston-chat-${Date.now()}.md`;
+  a.download = `tungsten-chat-${Date.now()}.md`;
   a.click();
   URL.revokeObjectURL(url);
+  showToast('Session exported to Markdown');
 }
 
 function sendPromptSuggestion(text) {
@@ -1046,11 +2027,16 @@ async function handlePlaygroundGenerate(explicitPrompt = null) {
       freeTestPass: true
     };
 
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+    if (currentAuthSession && currentAuthSession.access_token) {
+      headers['Authorization'] = `Bearer ${currentAuthSession.access_token}`;
+    }
+
     const res = await fetch(PLAYGROUND_API, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: headers,
       body: JSON.stringify(payload)
     });
 
@@ -1145,6 +2131,7 @@ window.addEventListener('keydown', (e) => {
 // 6. INITIALIZATION & BOOTSTRAP
 // ============================================================
 window.addEventListener('DOMContentLoaded', () => {
+  initSupabaseAuth();
   initBlueprints();
   initSplitterDrag();
 
@@ -1154,7 +2141,13 @@ window.addEventListener('DOMContentLoaded', () => {
     if (saved) setPaneRatio(parseInt(saved, 10));
   } catch (_) {}
 
-  // Render initial chat & playground
+  // Render initial chat, threads & playground
+  renderThreadsList();
+  updateSidebarBadge();
+  updateActiveProjectBadge();
+  updateByokStatusBadge();
+  updateContextGauge();
+
   renderChatUI();
   renderIframe(currentHtml);
 
